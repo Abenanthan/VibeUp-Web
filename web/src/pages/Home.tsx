@@ -371,6 +371,8 @@ export const Home: React.FC<{
             </FadeInView>
           )}
 
+          <Section title="Abe's Favourites" songs={favourites} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+
           {/* Moods */}
           <FadeInView direction="up" delay={0.2} style={{ marginBottom: '36px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '14px', letterSpacing: '-0.2px' }}>Moods</h3>
@@ -386,8 +388,6 @@ export const Home: React.FC<{
               ))}
             </StaggerContainer>
           </FadeInView>
-
-          <Section title="Favourites" songs={favourites} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
           <Section title="Trending Now" songs={trending} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
           <Section title="New Releases" songs={newReleases} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
 
