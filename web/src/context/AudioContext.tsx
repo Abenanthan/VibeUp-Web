@@ -112,6 +112,66 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { currentSongRef.current = currentSong; }, [currentSong]);
   useEffect(() => { repeatModeRef.current = repeatMode; }, [repeatMode]);
 
+  // Initialize Web Audio API (called on first user interaction only)
+  const initWebAudio = useCallback(() => {
+    if (webAudioInitialized.current || !audioRef.current) return;
+
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+
+      const ctx = new AudioCtx();
+      audioContextRef.current = ctx;
+
+      // Need crossOrigin for Web Audio API only if loading external source
+      const audio = audioRef.current;
+      if (audio.src && !audio.src.includes('/audio-proxy-')) {
+        audio.crossOrigin = 'anonymous';
+      } else {
+        audio.removeAttribute('crossorigin');
+      }
+
+      const source = ctx.createMediaElementSource(audio);
+      sourceNodeRef.current = source;
+
+      // Bass boost filter
+      const bassFilter = ctx.createBiquadFilter();
+      bassFilter.type = 'lowshelf';
+      bassFilter.frequency.value = 150;
+      bassFilter.gain.value = 0;
+      bassFilterRef.current = bassFilter;
+
+      // 5-band EQ
+      const filters = EQ_FREQUENCIES.map((freq) => {
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'peaking';
+        filter.frequency.value = freq;
+        filter.Q.value = 1.0;
+        filter.gain.value = 0;
+        return filter;
+      });
+      filtersRef.current = filters;
+
+      // Preamp gain node
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = 1.0;
+      eqGainNodeRef.current = gainNode;
+
+      // Chain: source -> bass -> eq bands -> gain -> destination
+      let lastNode: AudioNode = source;
+      lastNode.connect(bassFilter);
+      lastNode = bassFilter;
+      filters.forEach(f => { lastNode.connect(f); lastNode = f; });
+      lastNode.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      webAudioInitialized.current = true;
+      console.log('Web Audio API initialized successfully');
+    } catch (e) {
+      console.warn('Web Audio API initialization failed:', e);
+    }
+  }, []);
+
   // Internal playNext using refs (safe inside event listeners)
   const playNextInternal = useCallback(() => {
     const queue = activeQueueRef.current;
@@ -238,67 +298,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [playNextInternal]); // Only re-attach if playNextInternal changes
 
-  // Initialize Web Audio API (called on first user interaction only)
-  const initWebAudio = useCallback(() => {
-    if (webAudioInitialized.current || !audioRef.current) return;
 
-    try {
-      // Must set crossOrigin BEFORE loading any src for Web Audio to work
-      // Only do this if EQ is enabled and user explicitly triggers it
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-
-      const ctx = new AudioCtx();
-      audioContextRef.current = ctx;
-
-      // Need crossOrigin for Web Audio API only if loading external source
-      const audio = audioRef.current;
-      if (audio.src && !audio.src.includes('/audio-proxy-')) {
-        audio.crossOrigin = 'anonymous';
-      } else {
-        audio.removeAttribute('crossorigin');
-      }
-
-      const source = ctx.createMediaElementSource(audio);
-      sourceNodeRef.current = source;
-
-      // Bass boost filter
-      const bassFilter = ctx.createBiquadFilter();
-      bassFilter.type = 'lowshelf';
-      bassFilter.frequency.value = 150;
-      bassFilter.gain.value = 0;
-      bassFilterRef.current = bassFilter;
-
-      // 5-band EQ
-      const filters = EQ_FREQUENCIES.map((freq) => {
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'peaking';
-        filter.frequency.value = freq;
-        filter.Q.value = 1.0;
-        filter.gain.value = 0;
-        return filter;
-      });
-      filtersRef.current = filters;
-
-      // Preamp gain node
-      const gainNode = ctx.createGain();
-      gainNode.gain.value = 1.0;
-      eqGainNodeRef.current = gainNode;
-
-      // Chain: source -> bass -> eq bands -> gain -> destination
-      let lastNode: AudioNode = source;
-      lastNode.connect(bassFilter);
-      lastNode = bassFilter;
-      filters.forEach(f => { lastNode.connect(f); lastNode = f; });
-      lastNode.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      webAudioInitialized.current = true;
-      console.log('Web Audio API initialized successfully');
-    } catch (e) {
-      console.warn('Web Audio API initialization failed:', e);
-    }
-  }, []);
 
   // Update EQ filters when values change
   const updateAudioFilters = useCallback(() => {
@@ -329,17 +329,24 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Public API: playSong
   const playSong = useCallback(async (song: Song, newQueue?: Song[]) => {
+    // Auto-initialize Web Audio on first play to prevent any routing glitches later
+    if (!webAudioInitialized.current) {
+      initWebAudio();
+    }
     // Resume AudioContext if it was suspended (browser autoplay policy)
     if (audioContextRef.current?.state === 'suspended') {
       await audioContextRef.current.resume();
     }
     await playSongInternal(song, newQueue);
-  }, [playSongInternal]);
+  }, [playSongInternal, initWebAudio]);
 
   const togglePlayPause = useCallback(() => {
     const audio = audioRef.current;
     if (!currentSongRef.current) return;
 
+    if (!webAudioInitialized.current) {
+      initWebAudio();
+    }
     if (audioContextRef.current?.state === 'suspended') {
       audioContextRef.current.resume();
     }
@@ -349,7 +356,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else {
       audio.pause();
     }
-  }, []);
+  }, [initWebAudio]);
 
   const seekTo = useCallback((time: number) => {
     const audio = audioRef.current;
