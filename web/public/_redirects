@@ -1,0 +1,4 @@
+/audio-proxy-aac/* https://aac.saavncdn.com/:splat 200
+/audio-proxy-h/* https://h.saavncdn.com/:splat 200
+/audio-proxy-c/* https://c.saavncdn.com/:splat 200
+/* /index.html 200

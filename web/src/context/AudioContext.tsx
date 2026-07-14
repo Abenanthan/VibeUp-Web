@@ -52,6 +52,25 @@ export const PRESETS: Record<string, number[]> = {
   Vocal: [-2, -1.5, 2, 3, 1.5]
 };
 
+const getProxiedAudioUrl = (url: string) => {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'aac.saavncdn.com') {
+      return url.replace('https://aac.saavncdn.com', '/audio-proxy-aac');
+    }
+    if (parsed.hostname === 'h.saavncdn.com') {
+      return url.replace('https://h.saavncdn.com', '/audio-proxy-h');
+    }
+    if (parsed.hostname === 'c.saavncdn.com') {
+      return url.replace('https://c.saavncdn.com', '/audio-proxy-c');
+    }
+  } catch (e) {
+    // Ignore invalid URL
+  }
+  return url;
+};
+
 // Singleton audio element - created once, never recreated
 const globalAudio = new Audio();
 globalAudio.preload = 'auto';
@@ -138,10 +157,13 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setCurrentSong(resolvedSong);
       currentSongRef.current = resolvedSong;
 
-      // CRITICAL: Do NOT set crossOrigin - aac.saavncdn.com doesn't send CORS headers
-      // Setting crossOrigin='anonymous' would block playback entirely
-      audio.removeAttribute('crossorigin');
-      audio.src = resolvedSong.audioUrl;
+      const proxiedUrl = getProxiedAudioUrl(resolvedSong.audioUrl);
+      if (proxiedUrl.startsWith('/audio-proxy-')) {
+        audio.removeAttribute('crossorigin');
+      } else {
+        audio.crossOrigin = 'anonymous';
+      }
+      audio.src = proxiedUrl;
       audio.volume = volume;
       audio.load();
 
@@ -229,9 +251,13 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const ctx = new AudioCtx();
       audioContextRef.current = ctx;
 
-      // Need crossOrigin for Web Audio API - but only set it here, not during normal playback
+      // Need crossOrigin for Web Audio API only if loading external source
       const audio = audioRef.current;
-      audio.crossOrigin = 'anonymous';
+      if (audio.src && !audio.src.includes('/audio-proxy-')) {
+        audio.crossOrigin = 'anonymous';
+      } else {
+        audio.removeAttribute('crossorigin');
+      }
 
       const source = ctx.createMediaElementSource(audio);
       sourceNodeRef.current = source;
