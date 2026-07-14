@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { Song } from '../types';
-import { saavnApi } from '../services/api';
+import { saavnApi, lyricsApi } from '../services/api';
+import type { LyricsData } from '../services/api';
 
 export type RepeatMode = 'none' | 'queue' | 'song';
 
@@ -37,6 +38,10 @@ interface AudioContextType {
   setBassBoost: (value: number) => void;
   preset: string;
   applyPreset: (presetName: string) => void;
+
+  // Lyrics API
+  lyricsState: LyricsData | null;
+  lyricsLoading: boolean;
 }
 
 const AudioPlayContext = createContext<AudioContextType | undefined>(undefined);
@@ -93,6 +98,11 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [bassBoost, setBassBoostState] = useState(0);
   const [preset, setPreset] = useState('Normal');
 
+  // Lyrics states
+  const [lyricsState, setLyricsState] = useState<LyricsData | null>(null);
+  const [lyricsLoading, setLyricsLoading] = useState(false);
+  const lyricsCache = useRef<Record<string, LyricsData>>({});
+
   // Refs - use the singleton audio element
   const audioRef = useRef<HTMLAudioElement>(globalAudio);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -111,6 +121,48 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { activeQueueRef.current = activeQueue; }, [activeQueue]);
   useEffect(() => { currentSongRef.current = currentSong; }, [currentSong]);
   useEffect(() => { repeatModeRef.current = repeatMode; }, [repeatMode]);
+
+  // Background pre-fetch lyrics when currentSong changes
+  useEffect(() => {
+    if (!currentSong) {
+      setLyricsState(null);
+      setLyricsLoading(false);
+      return;
+    }
+
+    const songId = currentSong.id;
+    if (lyricsCache.current[songId]) {
+      setLyricsState(lyricsCache.current[songId]);
+      setLyricsLoading(false);
+      return;
+    }
+
+    setLyricsState(null);
+    setLyricsLoading(true);
+
+    const loadLyrics = async () => {
+      try {
+        const data = await lyricsApi.fetchLyrics(
+          currentSong.artist,
+          currentSong.title,
+          currentSong.album,
+          currentSong.id
+        );
+        lyricsCache.current[songId] = data;
+        if (currentSongRef.current?.id === songId) {
+          setLyricsState(data);
+          setLyricsLoading(false);
+        }
+      } catch (e) {
+        console.error('Error background fetching lyrics:', e);
+        if (currentSongRef.current?.id === songId) {
+          setLyricsLoading(false);
+        }
+      }
+    };
+
+    loadLyrics();
+  }, [currentSong]);
 
   // Initialize Web Audio API (called on first user interaction only)
   const initWebAudio = useCallback(() => {
@@ -501,7 +553,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         bassBoost,
         setBassBoost,
         preset,
-        applyPreset
+        applyPreset,
+        lyricsState,
+        lyricsLoading
       }}
     >
       {children}

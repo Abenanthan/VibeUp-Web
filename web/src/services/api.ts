@@ -158,44 +158,68 @@ function cleanTitle(title: string): string {
     .trim();
 }
 
-export const lyricsApi = {
-  fetchLyrics: async (artist: string, title: string, album?: string): Promise<LyricsData> => {
-    try {
-      // Step 1: Try exact match via LRCLib API GET
-      let url = `${LRCLIB_BASE_URL}api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`;
-      if (album) {
-        url += `&album_name=${encodeURIComponent(album)}`;
-      }
-      
-      let response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        return processLrcResponse(data);
-      }
+const LOCAL_STORAGE_PREFIX = 'vibeup_lyrics_';
 
-      // Step 2: Try with cleaned artist/title if failed
+async function fetchLrcData(url: string, isSearch = false): Promise<LyricsData | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (isSearch) {
+      if (Array.isArray(json) && json.length > 0) {
+        return processLrcResponse(json[0]);
+      }
+      return null;
+    }
+    return processLrcResponse(json);
+  } catch {
+    return null;
+  }
+}
+
+export const lyricsApi = {
+  fetchLyrics: async (artist: string, title: string, _album?: string, songId?: string): Promise<LyricsData> => {
+    // 1. Check local persistent storage cache
+    if (songId) {
+      try {
+        const cached = localStorage.getItem(LOCAL_STORAGE_PREFIX + songId);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && (parsed.syncedLyrics || parsed.plainLyrics || parsed.instrumental)) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        // Ignore cache read errors
+      }
+    }
+
+    try {
       const cArtist = cleanArtist(artist);
       const cTitle = cleanTitle(title);
-      if (cArtist !== artist || cTitle !== title) {
-        url = `${LRCLIB_BASE_URL}api/get?artist_name=${encodeURIComponent(cArtist)}&track_name=${encodeURIComponent(cTitle)}`;
-        response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          return processLrcResponse(data);
+
+      // Try cleaned exact match (1st request)
+      const exactUrl = `${LRCLIB_BASE_URL}api/get?artist_name=${encodeURIComponent(cArtist)}&track_name=${encodeURIComponent(cTitle)}`;
+      let data = await fetchLrcData(exactUrl, false);
+
+      // If exact match fails, try search endpoint as fallback (2nd request)
+      if (!data || (!data.syncedLyrics && !data.plainLyrics && !data.instrumental)) {
+        const searchUrl = `${LRCLIB_BASE_URL}api/search?artist_name=${encodeURIComponent(cArtist)}&track_name=${encodeURIComponent(cTitle)}`;
+        data = await fetchLrcData(searchUrl, true);
+      }
+
+      const result = data || { synced: false, instrumental: false };
+
+      // Cache successful response in localStorage
+      if (songId && result && (result.syncedLyrics || result.plainLyrics || result.instrumental)) {
+        try {
+          localStorage.setItem(LOCAL_STORAGE_PREFIX + songId, JSON.stringify(result));
+        } catch (e) {
+          // Ignore cache write errors
         }
       }
 
-      // Step 3: Try LRCLib search API
-      const searchUrl = `${LRCLIB_BASE_URL}api/search?artist_name=${encodeURIComponent(cArtist)}&track_name=${encodeURIComponent(cTitle)}`;
-      response = await fetch(searchUrl);
-      if (response.ok) {
-        const results = await response.json();
-        if (results && results.length > 0) {
-          return processLrcResponse(results[0]);
-        }
-      }
-
-      return { synced: false, instrumental: false };
+      return result;
     } catch (error) {
       console.error('Lyrics fetch error:', error);
       return { synced: false, instrumental: false };

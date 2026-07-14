@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { AlignLeft, X } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
-import { lyricsApi } from '../services/api';
-import type { LyricsData, LyricLine } from '../services/api';
+import type { LyricLine } from '../services/api';
 
 interface LyricsViewProps {
   isOpen: boolean;
@@ -10,46 +9,11 @@ interface LyricsViewProps {
 }
 
 export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
-  const { currentSong, currentTime, seekTo } = useAudio();
-  const [lyricsState, setLyricsState] = useState<LyricsData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { currentSong, currentTime, seekTo, lyricsState, lyricsLoading } = useAudio();
   const [activeLineIndex, setActiveLineIndex] = useState(-1);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const linesRefs = useRef<(HTMLParagraphElement | null)[]>([]);
-
-  // Cache to avoid refetching during the session
-  const [cache] = useState<Record<string, LyricsData>>({});
-
-  useEffect(() => {
-    if (!currentSong || !isOpen) return;
-
-    const fetchSongLyrics = async () => {
-      const songId = currentSong.id;
-      if (cache[songId]) {
-        setLyricsState(cache[songId]);
-        return;
-      }
-
-      setLoading(true);
-      setLyricsState(null);
-      try {
-        const data = await lyricsApi.fetchLyrics(
-          currentSong.artist,
-          currentSong.title,
-          currentSong.album
-        );
-        cache[songId] = data;
-        setLyricsState(data);
-      } catch (e) {
-        console.error('Error fetching lyrics:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSongLyrics();
-  }, [currentSong, isOpen]);
 
   // Synchronize current timestamp to active lyric index
   useEffect(() => {
@@ -139,14 +103,14 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
           scrollBehavior: 'smooth'
         }}
       >
-        {loading && (
+        {lyricsLoading && (
           <div className="flex flex-col items-center justify-center h-64 gap-3 mt-12" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
             <div className="border-4 border-primary border-t-transparent w-8 h-8 rounded-full animate-spin" style={{ border: '4px solid #7C3AED', borderTopColor: 'transparent', width: '32px', height: '32px', borderRadius: '50%', animation: 'spin-slow 1s linear infinite' }}></div>
             <p className="text-sm text-text-muted">Loading lyrics...</p>
           </div>
         )}
 
-        {!loading && lyricsState?.instrumental && (
+        {!lyricsLoading && lyricsState?.instrumental && (
           <div className="text-center mt-20" style={{ textAlign: 'center' }}>
             <span className="text-5xl block mb-4">🎻</span>
             <p className="text-xl font-bold tracking-wide text-text-muted">Instrumental</p>
@@ -154,7 +118,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {!loading && !lyricsState?.instrumental && !lyricsState?.plainLyrics && !lyricsState?.syncedLyrics && (
+        {!lyricsLoading && !lyricsState?.instrumental && !lyricsState?.plainLyrics && !lyricsState?.syncedLyrics && (
           <div className="text-center mt-20" style={{ textAlign: 'center' }}>
             <span className="text-4xl block mb-4">🔇</span>
             <p className="text-lg font-bold text-text-muted">Lyrics not found</p>
@@ -163,7 +127,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
         )}
 
         {/* Synced Lyrics List */}
-        {!loading && lyricsState?.synced && lyricsState.syncedLyrics && (
+        {!lyricsLoading && lyricsState?.synced && lyricsState.syncedLyrics && (
           <div className="w-full max-w-2xl flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', maxWidth: '650px', paddingBottom: '100px' }}>
             {lyricsState.syncedLyrics.map((line, idx) => {
               const isActive = idx === activeLineIndex;
@@ -197,7 +161,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
         )}
 
         {/* Plain Lyrics fallback */}
-        {!loading && !lyricsState?.synced && lyricsState?.plainLyrics && (
+        {!lyricsLoading && !lyricsState?.synced && lyricsState?.plainLyrics && (
           <div
             className="w-full max-w-xl text-center text-text-muted text-base md:text-lg font-medium leading-loose whitespace-pre-line"
             style={{

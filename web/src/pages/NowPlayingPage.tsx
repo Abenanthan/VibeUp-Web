@@ -5,8 +5,7 @@ import {
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 import { useLibrary } from '../context/LibraryContext';
-import { lyricsApi } from '../services/api';
-import type { LyricsData, LyricLine } from '../services/api';
+import type { LyricLine } from '../services/api';
 
 interface NowPlayingPageProps {
   isOpen: boolean;
@@ -30,7 +29,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({
     isShuffle, repeatMode, isResolvingUrl,
     togglePlayPause, seekTo, setVolume,
     playNext, playPrevious, toggleShuffle, toggleRepeatMode,
-    activeQueue
+    activeQueue, lyricsState, lyricsLoading
   } = useAudio();
   const { toggleLike, isLiked, playlists, addSongToPlaylist } = useLibrary();
 
@@ -38,13 +37,10 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({
   const [prevVolume, setPrevVolume] = useState(volume);
 
   // Lyrics states
-  const [lyricsState, setLyricsState] = useState<LyricsData | null>(null);
-  const [lyricsLoading, setLyricsLoading] = useState(false);
   const [activeLineIndex, setActiveLineIndex] = useState(-1);
   
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const lyricsLinesRefs = useRef<(HTMLParagraphElement | null)[]>([]);
-  const [lyricsCache] = useState<Record<string, LyricsData>>({});
 
   const liked = currentSong ? isLiked(currentSong.id) : false;
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -58,37 +54,6 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({
       setVolume(prevVolume || 0.8);
     }
   };
-
-  // Fetch lyrics when song changes or page opens
-  useEffect(() => {
-    if (!currentSong || !isOpen) return;
-
-    const fetchSongLyrics = async () => {
-      const songId = currentSong.id;
-      if (lyricsCache[songId]) {
-        setLyricsState(lyricsCache[songId]);
-        return;
-      }
-
-      setLyricsLoading(true);
-      setLyricsState(null);
-      try {
-        const data = await lyricsApi.fetchLyrics(
-          currentSong.artist,
-          currentSong.title,
-          currentSong.album
-        );
-        lyricsCache[songId] = data;
-        setLyricsState(data);
-      } catch (e) {
-        console.error('Error fetching lyrics:', e);
-      } finally {
-        setLyricsLoading(false);
-      }
-    };
-
-    fetchSongLyrics();
-  }, [currentSong, isOpen]);
 
   // Sync lyrics to currentTime
   useEffect(() => {
