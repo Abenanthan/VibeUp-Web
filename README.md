@@ -1,10 +1,10 @@
 # VibeUp 
 
-VibeUp is a modern, high-performance Android music player built with Jetpack Compose and Media3 (ExoPlayer). It offers a seamless listening experience with a focus on deep audio customization, dynamic lyrics, and multilingual support.
+VibeUp is a modern, high-performance Web Based music player built with React and Media3 (ExoPlayer). It offers a seamless listening experience with a focus on deep audio customization, dynamic lyrics, and multilingual support.
 
 ## Features
 
-- **Modern UI/UX**: Fully built with Jetpack Compose following Material 3 guidelines.
+- **Modern UI/UX**: Fully built with React following Material 3 guidelines.
 - **Advanced Playback Engine**: Powered by Android Media3 (ExoPlayer) for stable and high-quality audio streaming and local playback.
 - **Audio Effects Engine**:
   - 5-Band Equalizer with curated presets (Rock, Pop, Jazz, etc.).
