@@ -180,7 +180,7 @@ const MOODS = [
   { label: 'Workout',   query: 'workout gym songs',         bg: 'linear-gradient(135deg, #4a0c0c 0%, #8a1c1c 100%)' },
 ];
 
-export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCurrentTab }) => {
+export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCurrentTab: _setCurrentTab }) => {
   const { playSong, currentSong } = useAudio();
   const { recentlyPlayed, addToRecentlyPlayed } = useLibrary();
 
