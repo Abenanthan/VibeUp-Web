@@ -49,7 +49,7 @@ export default function App() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#080818', color: '#F3F4F6' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}>
 
       {/* ── Main Panel Grid Layout ── */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', height: '100%' }}>
@@ -61,71 +61,64 @@ export default function App() {
         />
 
         {/* Center Screen */}
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#080818' }}>
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'var(--bg-base)', minWidth: 0 }}>
           {renderContent()}
         </main>
 
         {/* ── Right Queue Drawer ── */}
         {showQueue && currentSong && (
           <aside style={{
-            width: '300px',
-            backgroundColor: '#060612',
-            borderLeft: '1px solid rgba(124, 58, 237, 0.12)',
+            width: '280px',
+            backgroundColor: 'var(--bg-surface)',
+            borderLeft: '1px solid var(--border)',
             display: 'flex', flexDirection: 'column',
-            height: '100%', paddingBottom: '96px',
+            height: '100%', paddingBottom: '80px',
           }}>
             {/* Header */}
-            <div style={{ padding: '24px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ padding: '20px 16px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
               <div>
-                <h3 style={{ fontSize: '15px', fontWeight: 800, fontFamily: "'Outfit', sans-serif" }}>Play Queue</h3>
-                <p style={{ fontSize: '11px', color: '#4B5563', marginTop: '2px' }}>{activeQueue.length} tracks</p>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Play Queue</h3>
+                <p style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '2px' }}>{activeQueue.length} tracks</p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={clearQueue}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', display: 'flex', padding: '6px' }}
-                  title="Clear queue"
-                >
-                  <Trash2 size={14} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button onClick={clearQueue} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', display: 'flex', padding: '5px', borderRadius: '6px', transition: 'background 0.15s' }} title="Clear queue" onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                  <Trash2 size={13} />
                 </button>
-                <button
-                  onClick={() => setShowQueue(false)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', display: 'flex', padding: '6px' }}
-                >
-                  <X size={16} />
+                <button onClick={() => setShowQueue(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', padding: '5px', borderRadius: '6px', transition: 'background 0.15s' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                  <X size={15} />
                 </button>
               </div>
             </div>
 
             {/* Queue List */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
               {activeQueue.length === 0
-                ? <p style={{ fontSize: '12px', color: '#374151', padding: '12px', fontStyle: 'italic' }}>Queue is empty.</p>
+                ? <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', padding: '12px 6px', fontStyle: 'italic' }}>Queue is empty.</p>
                 : activeQueue.map(song => {
                     const isActive = currentSong.id === song.id;
                     return (
                       <div
                         key={song.id}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          padding: '8px 10px', borderRadius: '10px', marginBottom: '2px',
-                          background: isActive ? 'rgba(124,58,237,0.12)' : 'transparent',
-                          border: isActive ? '1px solid rgba(124,58,237,0.25)' : '1px solid transparent',
-                          transition: 'background 0.15s',
+                          display: 'flex', alignItems: 'center', gap: '9px',
+                          padding: '7px 8px', borderRadius: '9px', marginBottom: '1px',
+                          background: isActive ? 'var(--amber-dim)' : 'transparent',
+                          border: `1px solid ${isActive ? 'var(--amber-glow)' : 'transparent'}`,
+                          transition: 'background 0.12s',
                           cursor: 'pointer',
                         }}
-                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--bg-hover)'; }}
                         onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                       >
-                        <div style={{ position: 'relative', width: '36px', height: '36px', flexShrink: 0 }}>
+                        <div style={{ position: 'relative', width: '34px', height: '34px', flexShrink: 0 }}>
                           <img src={song.imageUrl} alt={song.title}
-                            style={{ width: '36px', height: '36px', borderRadius: '7px', objectFit: 'cover' }} />
+                            style={{ width: '34px', height: '34px', borderRadius: '7px', objectFit: 'cover' }} />
                           {!isActive && (
                             <button
                               onClick={() => playSong(song)}
                               style={{
                                 position: 'absolute', inset: 0,
-                                background: 'rgba(0,0,0,0.65)',
+                                background: 'rgba(0,0,0,0.6)',
                                 border: 'none', cursor: 'pointer', borderRadius: '7px',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 opacity: 0, transition: 'opacity 0.15s', color: '#fff',
@@ -133,25 +126,25 @@ export default function App() {
                               onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                               onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
                             >
-                              <Play size={12} fill="white" />
+                              <Play size={11} fill="white" />
                             </button>
                           )}
                         </div>
                         <div style={{ flex: 1, overflow: 'hidden' }}>
-                          <p style={{ fontSize: '12px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isActive ? '#A78BFA' : '#F3F4F6' }}>
+                          <p style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isActive ? 'var(--amber)' : 'var(--text-primary)' }}>
                             {song.title}
                           </p>
-                          <p style={{ fontSize: '10px', color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                          <p style={{ fontSize: '10px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
                             {song.artist}
                           </p>
                         </div>
                         <button
                           onClick={() => removeFromQueue(song.id)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', flexShrink: 0, opacity: 0.5, transition: 'opacity 0.15s' }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0, opacity: 0.4, transition: 'opacity 0.15s' }}
                           onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                          onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
+                          onMouseLeave={e => (e.currentTarget.style.opacity = '0.4')}
                         >
-                          <X size={13} />
+                          <X size={12} />
                         </button>
                       </div>
                     );

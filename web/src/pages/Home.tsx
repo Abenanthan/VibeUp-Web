@@ -1,65 +1,208 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Play, Heart, Plus, Search, ChevronRight } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { Play, Heart, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 import { useLibrary } from '../context/LibraryContext';
 import { saavnApi } from '../services/api';
 import type { Song } from '../types';
 
-const FAVOURITE_IDS = [
-  'GWwnRe0u', 'rjkrTnma', 'm1iXOUID', 'mPTrDSun',
-  '__YIeFT-', 'uP7MlTHz', 'eLm-JvK4', 'SM-rvz75',
-  'qcVqPqk5', 'vRNpPA7_', 'yBmo2qWU', 'QWLY3Ls_',
-  'QkFUdVod', 'BH07HVc8', 'kehuVn2F', 'cDHlLKvW', '_KjTxjcC'
-];
+/* ── Horizontal scroll container ── */
+const HorizontalScroll: React.FC<{ children: React.ReactNode; gap?: string }> = ({ children, gap = '14px' }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [showL, setShowL] = useState(false);
+  const [showR, setShowR] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const dragX = useRef(0);
+  const dragSL = useRef(0);
 
-interface ArtistInfo { name: string; image: string; query: string; }
+  const check = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    setShowL(el.scrollLeft > 2);
+    setShowR(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }, []);
 
-const ARTISTS: ArtistInfo[] = [
-  { name: 'Anirudh', image: 'https://c.saavncdn.com/artists/Anirudh_Ravichander_500x500.jpg', query: 'Anirudh Ravichander' },
-  { name: 'Sid Sriram', image: 'https://c.saavncdn.com/artists/Sid_Sriram_500x500.jpg', query: 'Sid Sriram' },
-  { name: 'Arijit Singh', image: 'https://c.saavncdn.com/artists/Arijit_Singh_500x500.jpg', query: 'Arijit Singh' },
-  { name: 'GV Prakash', image: 'https://c.saavncdn.com/artists/G_V_Prakash_Kumar_500x500.jpg', query: 'GV Prakash' },
-  { name: 'Hiphop Tamizha', image: 'https://c.saavncdn.com/artists/Hiphop_Tamizha_500x500.jpg', query: 'Hiphop Tamizha' },
-  { name: 'AR Rahman', image: 'https://c.saavncdn.com/artists/AR_Rahman_500x500.jpg', query: 'AR Rahman' },
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    check();
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0 || el.scrollWidth <= el.clientWidth) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2;
+      const atStart = el.scrollLeft <= 2;
+      if ((e.deltaY > 0 && atEnd) || (e.deltaY < 0 && atStart)) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY * 1.5;
+      check();
+    };
+    el.addEventListener('scroll', check);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', check); el.removeEventListener('wheel', onWheel); ro.disconnect(); };
+  }, [check]);
+
+  const scroll = (dir: 'left' | 'right') => {
+    const el = ref.current;
+    if (el) { el.scrollBy({ left: dir === 'left' ? -el.clientWidth * 0.7 : el.clientWidth * 0.7, behavior: 'smooth' }); setTimeout(check, 350); }
+  };
+
+  const navBtn = (dir: 'left' | 'right') => ({
+    position: 'absolute' as const,
+    [dir]: '-14px',
+    top: '36%',
+    transform: 'translateY(-50%)',
+    width: '32px', height: '32px',
+    borderRadius: '50%',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer',
+    zIndex: 10,
+    opacity: hovered ? 1 : 0,
+    transition: 'opacity 0.2s, background 0.15s',
+  });
+
+  return (
+    <div style={{ position: 'relative', width: '100%', minWidth: 0 }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+      {showL && <button style={navBtn('left')} onClick={() => scroll('left')} onMouseEnter={e => (e.currentTarget.style.background = 'var(--amber)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-elevated)')}><ChevronLeft size={16} /></button>}
+      {showR && <button style={navBtn('right')} onClick={() => scroll('right')} onMouseEnter={e => (e.currentTarget.style.background = 'var(--amber)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-elevated)')}><ChevronRight size={16} /></button>}
+      <div
+        ref={ref}
+        className="hide-scrollbar"
+        onMouseDown={e => { setDragging(true); dragX.current = e.pageX - (ref.current?.offsetLeft || 0); dragSL.current = ref.current?.scrollLeft || 0; }}
+        onMouseMove={e => { if (!dragging || !ref.current) return; e.preventDefault(); const x = e.pageX - (ref.current.offsetLeft); ref.current.scrollLeft = dragSL.current - (x - dragX.current) * 1.5; check(); }}
+        onMouseUp={() => setDragging(false)}
+        onMouseLeave={() => setDragging(false)}
+        style={{ display: 'flex', gap, overflowX: 'auto', paddingBottom: '8px', width: '100%', minWidth: 0, cursor: dragging ? 'grabbing' : 'grab', userSelect: dragging ? 'none' : 'auto' }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+/* ── Song Card ── */
+const SongCard: React.FC<{
+  song: Song; queue: Song[];
+  activeMenuId: string | null; setActiveMenuId: (id: string | null) => void;
+  handlePlay: (s: Song, q: Song[]) => void;
+}> = ({ song, queue, activeMenuId, setActiveMenuId, handlePlay }) => {
+  const { toggleLike, isLiked, playlists, addSongToPlaylist } = useLibrary();
+  const { currentSong, isPlaying } = useAudio();
+  const [hov, setHov] = useState(false);
+  const liked = isLiked(song.id);
+  const menuOpen = activeMenuId === song.id;
+  const isNowPlaying = currentSong?.id === song.id;
+
+  return (
+    <div style={{ width: '148px', flexShrink: 0, cursor: 'pointer', position: 'relative' }} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+      <div style={{ position: 'relative', width: '148px', height: '148px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', boxShadow: hov ? '0 10px 28px rgba(0,0,0,0.5)' : '0 3px 10px rgba(0,0,0,0.3)', transition: 'box-shadow 0.3s, transform 0.2s', transform: hov ? 'translateY(-2px)' : 'none' }}>
+        <img src={song.imageUrl} alt={song.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s', transform: hov ? 'scale(1.04)' : 'scale(1)' }} />
+        {/* Now playing teal indicator */}
+        {isNowPlaying && (
+          <div style={{ position: 'absolute', top: '8px', left: '8px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--teal)', boxShadow: '0 0 8px var(--teal)' }} />
+        )}
+        {/* Play overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.42)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: hov ? 1 : 0, transition: 'opacity 0.2s' }}>
+          <button onClick={() => handlePlay(song, queue)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--amber)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--amber-glow)', transform: hov ? 'scale(1)' : 'scale(0.8)', transition: 'transform 0.2s' }}>
+            {isNowPlaying && isPlaying ? <span style={{ width: '14px', height: '14px', display: 'flex', gap: '2px', alignItems: 'flex-end' }}>
+              {[1,2,3].map(i => <span key={i} className="visualizer-bar" style={{ height: '8px' }} />)}
+            </span> : <Play size={15} fill="#0d0c0a" color="#0d0c0a" style={{ marginLeft: '2px' }} />}
+          </button>
+        </div>
+        {/* Options */}
+        <button onClick={e => { e.stopPropagation(); setActiveMenuId(menuOpen ? null : song.id); }} style={{ position: 'absolute', top: '7px', right: '7px', background: 'rgba(0,0,0,0.65)', border: 'none', cursor: 'pointer', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 700, opacity: hov ? 1 : 0, transition: 'opacity 0.2s' }}>⋮</button>
+        {menuOpen && (
+          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '34px', right: '7px', background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '5px', zIndex: 50, minWidth: '155px', boxShadow: '0 12px 32px rgba(0,0,0,0.6)' }}>
+            <button onClick={() => { toggleLike(song); setActiveMenuId(null); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '7px 10px', borderRadius: '7px', color: liked ? 'var(--danger)' : 'var(--text-primary)', fontSize: '12px', fontWeight: 500, fontFamily: 'var(--font)' }}>
+              <Heart size={12} fill={liked ? 'var(--danger)' : 'none'} />{liked ? 'Unlike' : 'Like'}
+            </button>
+            {playlists.length > 0 && <div style={{ height: '1px', background: 'var(--border)', margin: '3px 0' }} />}
+            {playlists.map(pl => (
+              <button key={pl.id} onClick={() => { addSongToPlaylist(pl.id, song); setActiveMenuId(null); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', borderRadius: '7px', color: 'var(--text-secondary)', fontSize: '11px', fontFamily: 'var(--font)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <Plus size={9} />Add to {pl.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <p style={{ fontSize: '12px', fontWeight: 600, color: isNowPlaying ? 'var(--amber)' : 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>{song.title}</p>
+      <p style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.artist}</p>
+    </div>
+  );
+};
+
+/* ── Section ── */
+const Section: React.FC<{
+  title: string; songs: Song[]; viewAll?: () => void;
+  activeMenuId: string | null; setActiveMenuId: (id: string | null) => void;
+  handlePlay: (s: Song, q: Song[]) => void;
+}> = ({ title, songs, viewAll, activeMenuId, setActiveMenuId, handlePlay }) => {
+  if (!songs.length) return null;
+  return (
+    <section style={{ marginBottom: '38px', minWidth: 0, width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>{title}</h3>
+        {viewAll && (
+          <button onClick={viewAll} style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 500, fontFamily: 'var(--font)', transition: 'color 0.15s' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--amber)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
+            See all <ChevronRight size={13} />
+          </button>
+        )}
+      </div>
+      <HorizontalScroll gap="14px">
+        {songs.map(song => <SongCard key={song.id} song={song} queue={songs} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />)}
+      </HorizontalScroll>
+    </section>
+  );
+};
+
+/* ── Static data ── */
+const FAV_IDS = ['GWwnRe0u','rjkrTnma','m1iXOUID','mPTrDSun','__YIeFT-','uP7MlTHz','eLm-JvK4','SM-rvz75','qcVqPqk5','vRNpPA7_','yBmo2qWU','QWLY3Ls_','QkFUdVod','BH07HVc8','kehuVn2F','cDHlLKvW','_KjTxjcC'];
+
+const ARTISTS = [
+  { name: 'Anirudh',       image: 'https://c.saavncdn.com/artists/Anirudh_Ravichander_500x500.jpg',  query: 'Anirudh Ravichander' },
+  { name: 'Sid Sriram',    image: 'https://c.saavncdn.com/artists/Sid_Sriram_500x500.jpg',           query: 'Sid Sriram' },
+  { name: 'Arijit Singh',  image: 'https://c.saavncdn.com/artists/Arijit_Singh_500x500.jpg',         query: 'Arijit Singh' },
+  { name: 'GV Prakash',    image: 'https://c.saavncdn.com/artists/G_V_Prakash_Kumar_500x500.jpg',    query: 'GV Prakash' },
+  { name: 'Hiphop Tamizha',image: 'https://c.saavncdn.com/artists/Hiphop_Tamizha_500x500.jpg',      query: 'Hiphop Tamizha' },
+  { name: 'AR Rahman',     image: 'https://c.saavncdn.com/artists/AR_Rahman_500x500.jpg',            query: 'AR Rahman' },
 ];
 
 const MOODS = [
-  { label: 'Romantic', emoji: '💕', query: 'romantic love songs', grad: 'linear-gradient(135deg, #BE185D 0%, #F97316 100%)' },
-  { label: 'Party', emoji: '🎉', query: 'party dance songs', grad: 'linear-gradient(135deg, #B45309 0%, #DC2626 100%)' },
-  { label: 'Chill', emoji: '😌', query: 'chill relaxing songs', grad: 'linear-gradient(135deg, #0E7490 0%, #1D4ED8 100%)' },
-  { label: 'Sad', emoji: '😢', query: 'sad emotional songs', grad: 'linear-gradient(135deg, #4C1D95 0%, #1E3A8A 100%)' },
-  { label: 'Focus', emoji: '🎯', query: 'focus concentration music', grad: 'linear-gradient(135deg, #065F46 0%, #0369A1 100%)' },
-  { label: 'Workout', emoji: '💪', query: 'workout gym songs', grad: 'linear-gradient(135deg, #991B1B 0%, #B45309 100%)' },
+  { label: 'Romantic',  query: 'romantic love songs',       bg: 'linear-gradient(135deg, #8b2252 0%, #c94a6a 100%)' },
+  { label: 'Party',     query: 'party dance songs',         bg: 'linear-gradient(135deg, #7a3200 0%, #c45c00 100%)' },
+  { label: 'Chill',     query: 'chill relaxing songs',      bg: 'linear-gradient(135deg, #0c4a4a 0%, #0e7070 100%)' },
+  { label: 'Sad',       query: 'sad emotional songs',       bg: 'linear-gradient(135deg, #1e1a40 0%, #3a2d6e 100%)' },
+  { label: 'Focus',     query: 'focus concentration music', bg: 'linear-gradient(135deg, #0c3320 0%, #1a5c36 100%)' },
+  { label: 'Workout',   query: 'workout gym songs',         bg: 'linear-gradient(135deg, #4a0c0c 0%, #8a1c1c 100%)' },
 ];
 
-interface HomeProps { setCurrentTab: (tab: string) => void; }
+export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCurrentTab }) => {
+  const { playSong, currentSong } = useAudio();
+  const { recentlyPlayed, addToRecentlyPlayed } = useLibrary();
 
-export const Home: React.FC<HomeProps> = ({ setCurrentTab }) => {
-  const { playSong } = useAudio();
-  const { toggleLike, isLiked, recentlyPlayed, playlists, addSongToPlaylist, addToRecentlyPlayed } = useLibrary();
-
-  const [favourites, setFavourites] = useState<Song[]>([]);
-  const [trending, setTrending] = useState<Song[]>([]);
+  const [favourites, setFavourites]   = useState<Song[]>([]);
+  const [trending, setTrending]       = useState<Song[]>([]);
   const [newReleases, setNewReleases] = useState<Song[]>([]);
-  const [tamilHits, setTamilHits] = useState<Song[]>([]);
-  const [teluguHits, setTeluguHits] = useState<Song[]>([]);
-  const [hindiHits, setHindiHits] = useState<Song[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeMenuSongId, setActiveMenuSongId] = useState<string | null>(null);
-  const [hoveredSong, setHoveredSong] = useState<string | null>(null);
+  const [tamilHits, setTamilHits]     = useState<Song[]>([]);
+  const [teluguHits, setTeluguHits]   = useState<Song[]>([]);
+  const [hindiHits, setHindiHits]     = useState<Song[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  // Greeting based on time
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   useEffect(() => {
-    const loadHomeData = async () => {
+    (async () => {
       try {
-        const favSongs = await saavnApi.getSongsByIds(FAVOURITE_IDS);
-        setFavourites(favSongs);
+        const favs = await saavnApi.getSongsByIds(FAV_IDS);
+        setFavourites(favs);
         setLoading(false);
-
-        const [trendSongs, newTamil, newHindi, newTelugu, tamil, telugu, hindi] = await Promise.all([
+        const [trend, nTamil, nHindi, nTelugu, tamil, telugu, hindi] = await Promise.all([
           saavnApi.searchSongs('trending hits 2025', 12),
           saavnApi.searchSongs('new tamil songs 2025', 5),
           saavnApi.searchSongs('new hindi songs 2025', 5),
@@ -68,17 +211,11 @@ export const Home: React.FC<HomeProps> = ({ setCurrentTab }) => {
           saavnApi.searchSongs('telugu hits 2025', 10),
           saavnApi.searchSongs('hindi hits 2025', 10),
         ]);
-        setTrending(trendSongs);
-        setNewReleases([...newTamil, ...newHindi, ...newTelugu].sort(() => Math.random() - 0.5));
-        setTamilHits(tamil);
-        setTeluguHits(telugu);
-        setHindiHits(hindi);
-      } catch (e) {
-        console.error('Failed to load home data:', e);
-        setLoading(false);
-      }
-    };
-    loadHomeData();
+        setTrending(trend);
+        setNewReleases([...nTamil, ...nHindi, ...nTelugu].sort(() => Math.random() - 0.5));
+        setTamilHits(tamil); setTeluguHits(telugu); setHindiHits(hindi);
+      } catch (e) { console.error(e); setLoading(false); }
+    })();
   }, []);
 
   const handlePlay = useCallback((song: Song, queue: Song[]) => {
@@ -86,377 +223,93 @@ export const Home: React.FC<HomeProps> = ({ setCurrentTab }) => {
     playSong(song, queue);
   }, [playSong, addToRecentlyPlayed]);
 
-  const handleMoodClick = async (query: string) => {
+  const handleMood = async (query: string) => {
     try {
       const songs = await saavnApi.searchSongs(query, 20);
-      if (songs.length > 0) {
-        const randomSong = songs[Math.floor(Math.random() * songs.length)];
-        handlePlay(randomSong, songs);
-      }
+      if (songs.length) handlePlay(songs[Math.floor(Math.random() * songs.length)], songs);
     } catch (e) { console.error(e); }
   };
 
-  const handleArtistClick = async (query: string) => {
+  const handleArtist = async (query: string) => {
     try {
       const songs = await saavnApi.searchSongs(query, 25);
-      if (songs.length > 0) handlePlay(songs[0], songs);
+      if (songs.length) handlePlay(songs[0], songs);
     } catch (e) { console.error(e); }
-  };
-
-  const SongCard = ({ song, queue }: { song: Song; queue: Song[] }) => {
-    const liked = isLiked(song.id);
-    const isMenuOpen = activeMenuSongId === song.id;
-    const isHovered = hoveredSong === song.id;
-
-    return (
-      <div
-        style={{
-          width: '152px',
-          flexShrink: 0,
-          cursor: 'pointer',
-          position: 'relative',
-        }}
-        onMouseEnter={() => setHoveredSong(song.id)}
-        onMouseLeave={() => setHoveredSong(null)}
-      >
-        {/* Cover */}
-        <div
-          style={{
-            position: 'relative',
-            width: '152px',
-            height: '152px',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            marginBottom: '10px',
-            boxShadow: isHovered ? '0 12px 32px rgba(0,0,0,0.6)' : '0 4px 16px rgba(0,0,0,0.3)',
-            transition: 'box-shadow 0.3s ease',
-            transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-          }}
-        >
-          <img
-            src={song.imageUrl}
-            alt={song.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease', transform: isHovered ? 'scale(1.04)' : 'scale(1)' }}
-          />
-          {/* Play button overlay */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.45)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: isHovered ? 1 : 0,
-            transition: 'opacity 0.2s ease',
-          }}>
-            <button
-              onClick={() => handlePlay(song, queue)}
-              style={{
-                width: '44px', height: '44px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
-                border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 20px rgba(124, 58, 237, 0.6)',
-                transform: isHovered ? 'scale(1)' : 'scale(0.8)',
-                transition: 'transform 0.2s ease',
-              }}
-            >
-              <Play size={18} fill="white" color="white" style={{ marginLeft: '2px' }} />
-            </button>
-          </div>
-          {/* Options button */}
-          <button
-            onClick={e => { e.stopPropagation(); setActiveMenuSongId(isMenuOpen ? null : song.id); }}
-            style={{
-              position: 'absolute', top: '8px', right: '8px',
-              background: 'rgba(0,0,0,0.7)',
-              border: 'none', cursor: 'pointer',
-              borderRadius: '50%',
-              width: '26px', height: '26px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: '16px', fontWeight: 700,
-              opacity: isHovered ? 1 : 0,
-              transition: 'opacity 0.2s ease',
-            }}
-          >
-            ⋮
-          </button>
-          {/* Options dropdown */}
-          {isMenuOpen && (
-            <div
-              style={{
-                position: 'absolute', top: '36px', right: '8px',
-                background: '#111128',
-                border: '1px solid rgba(124, 58, 237, 0.2)',
-                borderRadius: '12px',
-                padding: '6px',
-                zIndex: 50,
-                minWidth: '160px',
-                boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              <button
-                onClick={() => { toggleLike(song); setActiveMenuSongId(null); }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  padding: '8px 12px', borderRadius: '8px',
-                  color: liked ? '#EF4444' : '#F3F4F6', fontSize: '12px', fontWeight: 600,
-                }}
-              >
-                <Heart size={12} fill={liked ? '#EF4444' : 'none'} />
-                {liked ? 'Unlike' : 'Like Song'}
-              </button>
-              {playlists.length > 0 && <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />}
-              {playlists.map(pl => (
-                <button
-                  key={pl.id}
-                  onClick={() => { addSongToPlaylist(pl.id, song); setActiveMenuSongId(null); }}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    padding: '7px 12px', borderRadius: '8px',
-                    color: '#9CA3AF', fontSize: '11px',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}
-                >
-                  <Plus size={10} />
-                  Add to {pl.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Metadata */}
-        <h4 style={{
-          fontSize: '13px', fontWeight: 700, color: '#F3F4F6',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          marginBottom: '3px',
-        }}>
-          {song.title}
-        </h4>
-        <p style={{
-          fontSize: '11px', color: '#6B7280',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {song.artist}
-        </p>
-      </div>
-    );
-  };
-
-  const Section = ({ title, songs, viewAll }: { title: string; songs: Song[]; viewAll?: () => void }) => {
-    if (songs.length === 0) return null;
-    return (
-      <section style={{ marginBottom: '40px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '20px', fontWeight: 800, fontFamily: "'Outfit', sans-serif", letterSpacing: '-0.3px' }}>{title}</h3>
-          {viewAll && (
-            <button
-              onClick={viewAll}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '4px',
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#7C3AED', fontSize: '12px', fontWeight: 600,
-              }}
-            >
-              See all <ChevronRight size={14} />
-            </button>
-          )}
-        </div>
-        <div style={{
-          display: 'flex', gap: '16px',
-          overflowX: 'auto', paddingBottom: '12px',
-          scrollbarWidth: 'none',
-        }}>
-          {songs.map(song => <SongCard key={song.id} song={song} queue={songs} />)}
-        </div>
-      </section>
-    );
   };
 
   return (
-    <div
-      onClick={() => setActiveMenuSongId(null)}
-      style={{
-        flex: 1, overflowY: 'auto',
-        padding: '36px 32px 120px 32px',
-        height: '100%',
-        color: '#F3F4F6',
-      }}
-    >
-      {/* ── Hero Header ── */}
-      <header style={{ marginBottom: '40px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '4px', fontWeight: 500 }}>
-              {greeting} 👋
-            </p>
-            <h2 style={{
-              fontSize: '36px', fontWeight: 800,
-              fontFamily: "'Outfit', sans-serif",
-              letterSpacing: '-0.5px', lineHeight: 1.1,
-              background: 'linear-gradient(135deg, #FFFFFF 0%, #A78BFA 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>
-              What's your vibe today?
-            </h2>
-          </div>
-          <button
-            onClick={() => setCurrentTab('search')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '12px 20px',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '14px',
-              cursor: 'pointer', color: '#9CA3AF',
-              fontSize: '14px', fontWeight: 500,
-              backdropFilter: 'blur(8px)',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <Search size={16} />
-            <span>Search music...</span>
-          </button>
-        </div>
+    <div onClick={() => setActiveMenuId(null)} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '32px 28px 100px', height: '100%', width: '100%', minWidth: 0 }}>
+
+      {/* ── Header ── */}
+      <header style={{ marginBottom: '36px' }}>
+        <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.5px', marginBottom: '5px' }}>{greeting}</p>
+        <h2 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.15, color: 'var(--text-primary)' }}>
+          What's your vibe<span style={{ color: 'var(--amber)' }}>?</span>
+        </h2>
       </header>
 
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px', gap: '16px' }}>
-          <div style={{
-            width: '40px', height: '40px',
-            border: '3px solid rgba(124, 58, 237, 0.2)',
-            borderTopColor: '#7C3AED',
-            borderRadius: '50%',
-            animation: 'spin-slow 0.8s linear infinite',
-          }} />
-          <p style={{ fontSize: '14px', color: '#6B7280' }}>Loading your music...</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '280px', flexDirection: 'column', gap: '14px' }}>
+          <div className="animate-spin" style={{ width: '32px', height: '32px', border: '2.5px solid var(--border-medium)', borderTopColor: 'var(--amber)', borderRadius: '50%' }} />
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Loading music…</p>
         </div>
       ) : (
         <>
-          {/* ── Recently Played quick row ── */}
+          {/* Recently Played */}
           {recentlyPlayed.length > 0 && (
-            <section style={{ marginBottom: '40px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 800, fontFamily: "'Outfit', sans-serif", letterSpacing: '-0.3px', marginBottom: '16px' }}>
-                🕐 Recently Played
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '10px' }}>
-                {recentlyPlayed.slice(0, 6).map(song => (
-                  <button
-                    key={song.id}
-                    onClick={() => handlePlay(song, recentlyPlayed)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '12px',
-                      padding: '8px 12px 8px 8px',
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      borderRadius: '10px',
-                      cursor: 'pointer', color: '#F3F4F6',
-                      textAlign: 'left',
-                      transition: 'background 0.2s ease',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124, 58, 237, 0.12)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
-                  >
-                    <img src={song.imageUrl} alt={song.title}
-                      style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
-                    <div style={{ overflow: 'hidden' }}>
-                      <p style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {song.title}
-                      </p>
-                      <p style={{ fontSize: '11px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {song.artist}
-                      </p>
-                    </div>
-                    <Play size={16} style={{ marginLeft: 'auto', flexShrink: 0, color: '#7C3AED' }} />
-                  </button>
-                ))}
+            <section style={{ marginBottom: '36px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '14px', letterSpacing: '-0.2px' }}>Recently Played</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                {recentlyPlayed.slice(0, 6).map(song => {
+                  const active = currentSong?.id === song.id;
+                  return (
+                    <button key={song.id} onClick={() => handlePlay(song, recentlyPlayed)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px 7px 7px', background: active ? 'var(--amber-dim)' : 'var(--bg-elevated)', border: `1px solid ${active ? 'var(--amber-glow)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left', transition: 'background 0.15s, border-color 0.15s', fontFamily: 'var(--font)' }} onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-hover)'; }}} onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-elevated)'; }}}>
+                      <img src={song.imageUrl} alt={song.title} style={{ width: '38px', height: '38px', borderRadius: '7px', objectFit: 'cover', flexShrink: 0 }} />
+                      <div style={{ overflow: 'hidden', flex: 1 }}>
+                        <p style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: active ? 'var(--amber)' : 'var(--text-primary)' }}>{song.title}</p>
+                        <p style={{ fontSize: '10px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>{song.artist}</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </section>
           )}
 
-          {/* ── Moods ── */}
-          <section style={{ marginBottom: '40px' }}>
-            <h3 style={{ fontSize: '20px', fontWeight: 800, fontFamily: "'Outfit', sans-serif", marginBottom: '16px' }}>
-              🎭 Moods
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
+          {/* Moods */}
+          <section style={{ marginBottom: '36px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '14px', letterSpacing: '-0.2px' }}>Moods</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
               {MOODS.map(m => (
-                <button
-                  key={m.label}
-                  onClick={() => handleMoodClick(m.query)}
-                  style={{
-                    height: '90px',
-                    background: m.grad,
-                    border: 'none', borderRadius: '14px',
-                    cursor: 'pointer',
-                    display: 'flex', flexDirection: 'column',
-                    justifyContent: 'flex-end',
-                    padding: '14px 16px',
-                    textAlign: 'left',
-                    transition: 'transform 0.2s ease, filter 0.2s ease',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.filter = 'brightness(1.1)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'brightness(1)'; }}
-                >
-                  <span style={{ position: 'absolute', top: '12px', right: '14px', fontSize: '22px' }}>{m.emoji}</span>
-                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff', fontFamily: "'Outfit', sans-serif" }}>{m.label}</span>
+                <button key={m.label} onClick={() => handleMood(m.query)} style={{ height: '82px', background: m.bg, border: 'none', borderRadius: 'var(--radius-lg)', cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: '14px 16px', textAlign: 'left', transition: 'transform 0.2s, filter 0.2s', position: 'relative', overflow: 'hidden', fontFamily: 'var(--font)' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.filter = 'brightness(1.12)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'brightness(1)'; }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.1px' }}>{m.label}</span>
                 </button>
               ))}
             </div>
           </section>
 
-          {/* Song sections */}
-          <Section title="❤️ Abe's Favourites" songs={favourites} />
-          <Section title="🔥 Trending Now" songs={trending} />
-          <Section title="🆕 New Releases" songs={newReleases} />
+          <Section title="Favourites"   songs={favourites}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
+          <Section title="Trending Now" songs={trending}     activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
+          <Section title="New Releases" songs={newReleases}  activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
 
-          {/* ── Artists ── */}
-          <section style={{ marginBottom: '40px' }}>
-            <h3 style={{ fontSize: '20px', fontWeight: 800, fontFamily: "'Outfit', sans-serif", marginBottom: '20px' }}>
-              🎤 Artists
-            </h3>
-            <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '12px', scrollbarWidth: 'none' }}>
+          {/* Artists */}
+          <section style={{ marginBottom: '38px', minWidth: 0 }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', letterSpacing: '-0.2px' }}>Artists</h3>
+            <HorizontalScroll gap="20px">
               {ARTISTS.map(art => (
-                <div
-                  key={art.name}
-                  onClick={() => handleArtistClick(art.query)}
-                  style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    gap: '10px', flexShrink: 0, cursor: 'pointer',
-                    width: '96px',
-                  }}
-                >
-                  <div style={{ position: 'relative', width: '88px', height: '88px' }}>
-                    <img
-                      src={art.image}
-                      alt={art.name}
-                      style={{
-                        width: '88px', height: '88px',
-                        borderRadius: '50%', objectFit: 'cover',
-                        border: '2px solid rgba(124, 58, 237, 0.25)',
-                        transition: 'border-color 0.2s ease',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#7C3AED')}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(124, 58, 237, 0.25)')}
-                    />
+                <div key={art.name} onClick={() => handleArtist(art.query)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '9px', flexShrink: 0, cursor: 'pointer', width: '88px' }}>
+                  <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--border-medium)', transition: 'border-color 0.2s' }} onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--amber)')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-medium)')}>
+                    <img src={art.image} alt={art.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.3 }}>
-                    {art.name}
-                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.3 }}>{art.name}</span>
                 </div>
               ))}
-            </div>
+            </HorizontalScroll>
           </section>
 
-          {/* Regional */}
-          <Section title="🎵 Tamil Hits" songs={tamilHits} />
-          <Section title="🎶 Telugu Hits" songs={teluguHits} />
-          <Section title="🎼 Hindi Hits" songs={hindiHits} />
+          <Section title="Tamil Hits"   songs={tamilHits}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
+          <Section title="Telugu Hits"  songs={teluguHits}  activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
+          <Section title="Hindi Hits"   songs={hindiHits}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
         </>
       )}
     </div>

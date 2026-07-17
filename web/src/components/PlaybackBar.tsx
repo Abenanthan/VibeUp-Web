@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  Play, Pause, SkipForward, SkipBack, Shuffle, Repeat, 
-  Volume2, VolumeX, ListMusic, Sliders, AlignLeft, ChevronUp
+import {
+  Play, Pause, SkipForward, SkipBack, Shuffle, Repeat,
+  Volume2, VolumeX, ListMusic, Sliders, AlignLeft, ChevronUp, Heart
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 import { useLibrary } from '../context/LibraryContext';
@@ -14,117 +14,136 @@ interface PlaybackBarProps {
   onOpenNowPlaying: () => void;
 }
 
-// Format duration in seconds to MM:SS string
-const formatTime = (timeInSecs: number): string => {
-  if (isNaN(timeInSecs)) return '00:00';
-  const mins = Math.floor(timeInSecs / 60);
-  const secs = Math.floor(timeInSecs % 60);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+const formatTime = (s: number): string => {
+  if (isNaN(s) || s < 0) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, '0')}`;
 };
+
+const BarBtn: React.FC<{
+  onClick: () => void;
+  title?: string;
+  active?: boolean;
+  children: React.ReactNode;
+}> = ({ onClick, title, active, children }) => (
+  <button
+    onClick={onClick}
+    title={title}
+    style={{
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      color: active ? 'var(--teal)' : 'var(--text-secondary)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '6px',
+      borderRadius: '6px',
+      transition: 'color 0.15s ease, background 0.15s ease',
+      flexShrink: 0,
+    }}
+    onMouseEnter={e => {
+      e.currentTarget.style.color = active ? 'var(--teal)' : 'var(--text-primary)';
+      e.currentTarget.style.background = 'var(--bg-hover)';
+    }}
+    onMouseLeave={e => {
+      e.currentTarget.style.color = active ? 'var(--teal)' : 'var(--text-secondary)';
+      e.currentTarget.style.background = 'none';
+    }}
+  >
+    {children}
+  </button>
+);
 
 export const PlaybackBar: React.FC<PlaybackBarProps> = ({
   onOpenEq,
   onToggleLyrics,
   showLyrics,
   onOpenQueue,
-  onOpenNowPlaying
+  onOpenNowPlaying,
 }) => {
   const {
-    currentSong,
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    isShuffle,
-    repeatMode,
-    isResolvingUrl,
-    togglePlayPause,
-    seekTo,
-    setVolume,
-    playNext,
-    playPrevious,
-    toggleShuffle,
-    toggleRepeatMode
+    currentSong, isPlaying, currentTime, duration, volume,
+    isShuffle, repeatMode, isResolvingUrl,
+    togglePlayPause, seekTo, setVolume,
+    playNext, playPrevious, toggleShuffle, toggleRepeatMode,
   } = useAudio();
-
   const { toggleLike, isLiked } = useLibrary();
   const [prevVolume, setPrevVolume] = useState(volume);
 
   const handleVolumeMute = () => {
-    if (volume > 0) {
-      setPrevVolume(volume);
-      setVolume(0);
-    } else {
-      setVolume(prevVolume || 0.8);
-    }
-  };
-
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    seekTo(parseFloat(e.target.value));
+    if (volume > 0) { setPrevVolume(volume); setVolume(0); }
+    else setVolume(prevVolume || 0.8);
   };
 
   if (!currentSong) return null;
 
   const songLiked = isLiked(currentSong.id);
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 h-24 glass border-t border-glass-border flex items-center justify-between px-6 z-40 text-text-main"
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '96px',
-        borderTop: '1px solid rgba(124, 58, 237, 0.15)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 24px',
-        zIndex: 40
-      }}
-    >
-      {/* ── Left Section: Song Info & Visualizer ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '33.33%', minWidth: 0 }}>
-        {/* Clickable album art + chevron to open Now Playing */}
+    <div style={{
+      position: 'fixed',
+      bottom: 0, left: 0, right: 0,
+      height: '78px',
+      backgroundColor: 'var(--bg-surface)',
+      borderTop: '1px solid var(--border)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 20px',
+      zIndex: 40,
+      gap: '12px',
+    }}>
+
+      {/* ── Left: Song Info ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '30%', minWidth: 0 }}>
+
+        {/* Album Art — clicking opens Now Playing */}
         <div
           onClick={onOpenNowPlaying}
-          style={{ position: 'relative', flexShrink: 0, cursor: 'pointer' }}
+          style={{ position: 'relative', flexShrink: 0, cursor: 'pointer', borderRadius: '8px', overflow: 'hidden' }}
           title="Open Now Playing"
         >
           <img
-            src={currentSong.imageUrl || 'https://c.saavncdn.com/artists/AR_Rahman_500x500.jpg'}
+            src={currentSong.imageUrl}
             alt={currentSong.title}
-            className={isPlaying ? 'animate-spin-slow' : ''}
             style={{
-              width: '52px', height: '52px',
-              borderRadius: '10px',
-              border: '1px solid rgba(124, 58, 237, 0.15)',
+              width: '46px', height: '46px',
               objectFit: 'cover', display: 'block',
             }}
           />
-          <div style={{
-            position: 'absolute', inset: 0, borderRadius: '10px',
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: 0, transition: 'opacity 0.2s',
-          }}
+          <div
+            style={{
+              position: 'absolute', inset: 0,
+              background: 'rgba(0,0,0,0.55)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: 0, transition: 'opacity 0.2s',
+            }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
           >
-            <ChevronUp size={18} color="white" />
+            <ChevronUp size={16} color="white" />
           </div>
         </div>
 
-        {/* Song title & artist - click to open Now Playing */}
+        {/* Song title & artist */}
         <div
           onClick={onOpenNowPlaying}
-          style={{ display: 'flex', flexDirection: 'column', gap: '3px', overflow: 'hidden', cursor: 'pointer', flex: 1, minWidth: 0 }}
+          style={{ overflow: 'hidden', cursor: 'pointer', flex: 1, minWidth: 0 }}
         >
-          <h4 style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <p style={{
+            fontSize: '13px', fontWeight: 600,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            color: 'var(--text-primary)',
+          }}>
             {currentSong.title}
-          </h4>
-          <p style={{ fontSize: '11px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          </p>
+          <p style={{
+            fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
             {currentSong.artist}
           </p>
         </div>
@@ -132,14 +151,21 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
         {/* Heart */}
         <button
           onClick={() => toggleLike(currentSong)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: songLiked ? '#EF4444' : '#6B7280', flexShrink: 0, transition: 'color 0.2s' }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: songLiked ? 'var(--danger)' : 'var(--text-secondary)',
+            flexShrink: 0, transition: 'color 0.2s, transform 0.2s',
+            display: 'flex', alignItems: 'center', padding: '4px',
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
         >
-          {songLiked ? '❤️' : '🤍'}
+          <Heart size={15} fill={songLiked ? 'var(--danger)' : 'none'} />
         </button>
 
-        {/* Visualizer */}
+        {/* Visualizer (playing indicator) */}
         {isPlaying && (
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '20px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '18px', flexShrink: 0 }}>
             <span className="visualizer-bar" />
             <span className="visualizer-bar" />
             <span className="visualizer-bar" />
@@ -149,84 +175,89 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
         )}
       </div>
 
-      {/* ── Middle Section: Timeline & Navigation Playback Controls ── */}
-      <div className="flex flex-col items-center gap-2 w-1/3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '33.33%' }}>
-        {/* Buttons Row */}
-        <div className="flex items-center gap-6" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          {/* Shuffle button */}
-          <button
-            onClick={toggleShuffle}
-            className={`transition-colors ${isShuffle ? 'text-green' : 'text-text-muted hover:text-white'}`}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: isShuffle ? '#10B981' : '#9CA3AF' }}
-            title="Shuffle"
-          >
-            <Shuffle size={16} />
-          </button>
+      {/* ── Center: Controls + Progress ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
 
-          {/* Previous song button */}
-          <button
-            onClick={playPrevious}
-            className="text-text-muted hover:text-white transition-colors"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
-          >
+        {/* Control buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {/* Shuffle */}
+          <BarBtn onClick={toggleShuffle} title="Shuffle" active={isShuffle}>
+            <Shuffle size={15} />
+          </BarBtn>
+
+          {/* Prev */}
+          <BarBtn onClick={playPrevious}>
             <SkipBack size={18} />
-          </button>
+          </BarBtn>
 
-          {/* Play/Pause Button */}
+          {/* Play / Pause */}
           <button
             onClick={togglePlayPause}
             disabled={isResolvingUrl}
-            className={`w-10 h-10 rounded-full flex items-center justify-center bg-white text-black hover:scale-105 transition-transform ${isResolvingUrl ? 'opacity-50' : ''}`}
+            title={isPlaying ? 'Pause' : 'Play'}
             style={{
+              width: '38px', height: '38px',
+              borderRadius: '50%',
+              background: 'var(--amber)',
               border: 'none',
               cursor: 'pointer',
-              backgroundColor: '#FFFFFF',
-              color: '#000000',
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 14px var(--amber-glow)',
+              transition: 'background 0.15s ease, transform 0.15s ease',
+              opacity: isResolvingUrl ? 0.6 : 1,
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'var(--amber-soft)';
+              e.currentTarget.style.transform = 'scale(1.06)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'var(--amber)';
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             {isResolvingUrl ? (
-              <span className="border-2 border-black border-t-transparent w-4 h-4 rounded-full animate-spin" style={{ display: 'inline-block', border: '2px solid #000', borderTopColor: 'transparent', width: '16px', height: '16px', borderRadius: '50%', animation: 'spin-slow 1s linear infinite' }}></span>
+              <div className="animate-spin" style={{
+                width: '15px', height: '15px',
+                border: '2px solid rgba(13,12,10,0.3)',
+                borderTopColor: '#0d0c0a',
+                borderRadius: '50%',
+              }} />
             ) : isPlaying ? (
-              <Pause size={18} fill="black" />
+              <Pause size={16} fill="#0d0c0a" color="#0d0c0a" />
             ) : (
-              <Play size={18} fill="black" className="ml-0.5" style={{ marginLeft: '2px' }} />
+              <Play size={16} fill="#0d0c0a" color="#0d0c0a" style={{ marginLeft: '2px' }} />
             )}
           </button>
 
-          {/* Next song button */}
-          <button
-            onClick={playNext}
-            className="text-text-muted hover:text-white transition-colors"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
-          >
+          {/* Next */}
+          <BarBtn onClick={playNext}>
             <SkipForward size={18} />
-          </button>
+          </BarBtn>
 
-          {/* Repeat button */}
-          <button
-            onClick={toggleRepeatMode}
-            className={`transition-colors relative ${repeatMode !== 'none' ? 'text-green' : 'text-text-muted hover:text-white'}`}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: repeatMode !== 'none' ? '#10B981' : '#9CA3AF' }}
-            title={`Repeat Mode: ${repeatMode}`}
-          >
-            <Repeat size={16} />
+          {/* Repeat */}
+          <div style={{ position: 'relative' }}>
+            <BarBtn onClick={toggleRepeatMode} title={`Repeat: ${repeatMode}`} active={repeatMode !== 'none'}>
+              <Repeat size={15} />
+            </BarBtn>
             {repeatMode === 'song' && (
-              <span className="absolute -top-1 -right-1 text-[8px] bg-green text-black font-extrabold w-3 h-3 rounded-full flex items-center justify-center" style={{ position: 'absolute', top: '-4px', right: '-4px', fontSize: '8px', backgroundColor: '#10B981', color: '#000', width: '12px', height: '12px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+              <span style={{
+                position: 'absolute', top: '1px', right: '1px',
+                background: 'var(--teal)', color: 'var(--bg-base)',
+                fontSize: '7px', fontWeight: 800,
+                borderRadius: '50%', width: '10px', height: '10px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                lineHeight: 1,
+              }}>
                 1
               </span>
             )}
-          </button>
+          </div>
         </div>
 
-        {/* Playback Progress Slider */}
-        <div className="w-full flex items-center gap-3" style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-          <span className="text-[10px] text-text-muted w-10 text-right" style={{ fontSize: '10px', color: '#9CA3AF', width: '40px', textAlign: 'right' }}>
+        {/* Progress bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', maxWidth: '480px' }}>
+          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontWeight: 500, width: '32px', textAlign: 'right', flexShrink: 0 }}>
             {formatTime(currentTime)}
           </span>
           <input
@@ -235,54 +266,44 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
             max={duration || 100}
             step="0.1"
             value={currentTime}
-            onChange={handleProgressChange}
-            className="flex-1"
-            style={{ flex: 1 }}
+            onChange={e => seekTo(parseFloat(e.target.value))}
+            style={{
+              flex: 1,
+              '--range-progress': `${progress}%`,
+            } as React.CSSProperties}
           />
-          <span className="text-[10px] text-text-muted w-10" style={{ fontSize: '10px', color: '#9CA3AF', width: '40px' }}>
+          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontWeight: 500, width: '32px', flexShrink: 0 }}>
             {formatTime(duration)}
           </span>
         </div>
       </div>
 
-      {/* ── Right Section: Audio Effects, Volume & Lyrics Controls ── */}
-      <div className="flex items-center justify-end gap-4 w-1/3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', width: '33.33%' }}>
-        {/* Toggle Lyrics */}
-        <button
-          onClick={onToggleLyrics}
-          className={`p-2 rounded-full hover:bg-card-hover transition-colors ${showLyrics ? 'text-primary' : 'text-text-muted hover:text-white'}`}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: showLyrics ? '#7C3AED' : '#9CA3AF' }}
-          title="Synced Lyrics"
-        >
-          <AlignLeft size={18} />
-        </button>
+      {/* ── Right: Extras + Volume ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '2px', width: '28%', minWidth: 0 }}>
 
-        {/* Open Queue List */}
-        <button
-          onClick={onOpenQueue}
-          className="p-2 rounded-full hover:bg-card-hover text-text-muted hover:text-white transition-colors"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
-          title="Play Queue"
-        >
-          <ListMusic size={18} />
-        </button>
+        <BarBtn onClick={onToggleLyrics} title="Lyrics" active={showLyrics}>
+          <AlignLeft size={16} />
+        </BarBtn>
 
-        {/* Equalizer Slider Settings */}
-        <button
-          onClick={onOpenEq}
-          className="p-2 rounded-full hover:bg-card-hover text-text-muted hover:text-white transition-colors"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
-          title="Equalizer & Sound Effects"
-        >
-          <Sliders size={18} />
-        </button>
+        <BarBtn onClick={onOpenQueue} title="Queue">
+          <ListMusic size={16} />
+        </BarBtn>
 
-        {/* Volume controls */}
-        <div className="flex items-center gap-2 w-32" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '128px' }}>
+        <BarBtn onClick={onOpenEq} title="Equalizer">
+          <Sliders size={16} />
+        </BarBtn>
+
+        {/* Volume */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '6px' }}>
           <button
             onClick={handleVolumeMute}
-            className="text-text-muted hover:text-white transition-colors"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-secondary)', display: 'flex', alignItems: 'center',
+              transition: 'color 0.15s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
           >
             {volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
@@ -292,9 +313,11 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
             max="1"
             step="0.01"
             value={volume}
-            onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-20"
-            style={{ width: '80px' }}
+            onChange={e => setVolume(parseFloat(e.target.value))}
+            style={{
+              width: '84px',
+              '--range-progress': `${volume * 100}%`,
+            } as React.CSSProperties}
           />
         </div>
       </div>
