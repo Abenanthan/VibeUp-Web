@@ -9,6 +9,17 @@ interface SidebarProps {
   setSelectedPlaylistId: (id: string | null) => void;
 }
 
+const THEMES = [
+  { id: 'amber-dark', name: 'Amber Dark (Default)', color: '#f0a030' },
+  { id: 'teal-nebula', name: 'Teal Nebula', color: '#34d4a8' },
+  { id: 'nordic-forest', name: 'Nordic Forest', color: '#76a882' },
+  { id: 'rose-gold', name: 'Rose Gold', color: '#d4a29c' },
+  { id: 'cyberpunk', name: 'Cyberpunk Neon', color: '#ff007f' },
+  { id: 'obsidian', name: 'Obsidian Glass', color: '#a0a0b0' },
+  { id: 'void', name: 'Void Space', color: '#7928ca' },
+  { id: 'ethereal-light', name: 'Ethereal Light', color: '#3b82f6' },
+];
+
 export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   setCurrentTab,
@@ -18,6 +29,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDesc, setNewListDesc] = useState('');
+  const [activeTheme, setActiveTheme] = useState(() => {
+    return localStorage.getItem('vibeup_theme') || 'amber-dark';
+  });
+
+  const handleThemeChange = (themeId: string) => {
+    setActiveTheme(themeId);
+    localStorage.setItem('vibeup_theme', themeId);
+    document.documentElement.className = `theme-${themeId}`;
+  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,9 +90,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               flexShrink: 0,
             }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="2" y="10" width="3" height="6" rx="1.5" fill="#0d0c0a"/>
-                <rect x="7" y="6"  width="3" height="10" rx="1.5" fill="#0d0c0a"/>
-                <rect x="12" y="2" width="3" height="14" rx="1.5" fill="#0d0c0a"/>
+                <rect x="2" y="10" width="3" height="6" rx="1.5" fill="var(--bg-base)"/>
+                <rect x="7" y="6"  width="3" height="10" rx="1.5" fill="var(--bg-base)"/>
+                <rect x="12" y="2" width="3" height="14" rx="1.5" fill="var(--bg-base)"/>
               </svg>
             </div>
             <div>
@@ -315,6 +335,69 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             ))
           )}
+        </div>
+        {/* ── Theme Selector ── */}
+        <div style={{
+          padding: '16px 20px',
+          borderTop: '1px solid var(--border)',
+          marginTop: 'auto',
+          backgroundColor: 'var(--bg-surface)',
+        }}>
+          <p style={{
+            fontSize: '9px',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '1.5px',
+            color: 'var(--text-tertiary)',
+            marginBottom: '10px'
+          }}>
+            Theme
+          </p>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '8px',
+          }}>
+            {THEMES.map(theme => {
+              const isSelected = activeTheme === theme.id;
+              return (
+                <button
+                  key={theme.id}
+                  onClick={() => handleThemeChange(theme.id)}
+                  title={theme.name}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: 'var(--radius-md)',
+                    background: theme.color,
+                    border: isSelected ? '2px solid var(--text-primary)' : '1px solid var(--border-medium)',
+                    cursor: 'pointer',
+                    padding: 0,
+                    boxShadow: isSelected ? '0 0 10px var(--amber-glow)' : 'none',
+                    transition: 'transform 0.15s ease, border-color 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  {isSelected && (
+                    <div style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: theme.id === 'ethereal-light' ? '#1e293b' : '#ffffff',
+                    }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </aside>
 

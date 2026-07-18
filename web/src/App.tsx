@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { PlaybackBar } from './components/PlaybackBar';
 import { EqualizerModal } from './components/EqualizerModal';
@@ -14,6 +14,11 @@ import { Play, Trash2, X } from 'lucide-react';
 export default function App() {
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('vibeup_theme') || 'amber-dark';
+    document.documentElement.className = `theme-${savedTheme}`;
+  }, []);
 
   // Audio UI panel toggles
   const [showEq, setShowEq] = useState(false);

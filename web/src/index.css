@@ -46,6 +46,159 @@
   --radius-xl:  18px;
 }
 
+body, aside, main, header, footer, button, input {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* ─── Custom Themes ─── */
+
+/* 1. Teal Nebula */
+.theme-teal-nebula {
+  --bg-base:     #08081a;
+  --bg-surface:  #0e0e24;
+  --bg-elevated: #161633;
+  --bg-hover:    #1e1e42;
+  --bg-active:   #252552;
+  --amber:       #34d4a8;
+  --amber-dim:   rgba(52, 212, 168, 0.12);
+  --amber-glow:  rgba(52, 212, 168, 0.22);
+  --amber-soft:  #29a885;
+  --teal:        #f0a030;
+  --teal-dim:    rgba(240, 160, 48, 0.12);
+  --text-primary:   #e2e2f0;
+  --text-secondary: #8c8cab;
+  --text-tertiary:  #4f4f73;
+  --border:        rgba(226, 226, 240, 0.06);
+  --border-medium: rgba(226, 226, 240, 0.10);
+  --border-strong: rgba(226, 226, 240, 0.16);
+}
+
+/* 2. Nordic Forest */
+.theme-nordic-forest {
+  --bg-base:     #0a0d0c;
+  --bg-surface:  #101514;
+  --bg-elevated: #18201e;
+  --bg-hover:    #202a27;
+  --bg-active:   #283531;
+  --amber:       #76a882;
+  --amber-dim:   rgba(118, 168, 130, 0.12);
+  --amber-glow:  rgba(118, 168, 130, 0.22);
+  --amber-soft:  #5c8766;
+  --teal:        #d4b476;
+  --teal-dim:    rgba(212, 180, 118, 0.12);
+  --text-primary:   #e5eae6;
+  --text-secondary: #88988c;
+  --text-tertiary:  #4c594f;
+  --border:        rgba(229, 234, 230, 0.06);
+  --border-medium: rgba(229, 234, 230, 0.10);
+  --border-strong: rgba(229, 234, 230, 0.16);
+}
+
+/* 3. Rose Gold */
+.theme-rose-gold {
+  --bg-base:     #120c0e;
+  --bg-surface:  #191215;
+  --bg-elevated: #21191d;
+  --bg-hover:    #2a2025;
+  --bg-active:   #34282d;
+  --amber:       #d4a29c;
+  --amber-dim:   rgba(212, 162, 156, 0.12);
+  --amber-glow:  rgba(212, 162, 156, 0.22);
+  --amber-soft:  #ab7e78;
+  --teal:        #94a9d4;
+  --teal-dim:    rgba(148, 169, 212, 0.12);
+  --text-primary:   #f5eded;
+  --text-secondary: #a39598;
+  --text-tertiary:  #5e5255;
+  --border:        rgba(245, 237, 237, 0.06);
+  --border-medium: rgba(245, 237, 237, 0.10);
+  --border-strong: rgba(245, 237, 237, 0.16);
+}
+
+/* 4. Cyberpunk Neon */
+.theme-cyberpunk {
+  --bg-base:     #000000;
+  --bg-surface:  #0a0a0c;
+  --bg-elevated: #121216;
+  --bg-hover:    #1a1a22;
+  --bg-active:   #22222e;
+  --amber:       #ff007f;
+  --amber-dim:   rgba(255, 0, 127, 0.12);
+  --amber-glow:  rgba(255, 0, 127, 0.22);
+  --amber-soft:  #cc0066;
+  --teal:        #00ffff;
+  --teal-dim:    rgba(0, 255, 255, 0.12);
+  --text-primary:   #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-tertiary:  #505060;
+  --border:        rgba(255, 0, 127, 0.15);
+  --border-medium: rgba(255, 0, 127, 0.25);
+  --border-strong: rgba(255, 0, 127, 0.35);
+}
+
+/* 5. Obsidian Glass */
+.theme-obsidian {
+  --bg-base:     #121212;
+  --bg-surface:  #181818;
+  --bg-elevated: #202020;
+  --bg-hover:    #2a2a2a;
+  --bg-active:   #333333;
+  --amber:       #a0a0b0;
+  --amber-dim:   rgba(160, 160, 176, 0.12);
+  --amber-glow:  rgba(160, 160, 176, 0.22);
+  --amber-soft:  #888899;
+  --teal:        #e5c07b;
+  --teal-dim:    rgba(229, 192, 123, 0.12);
+  --text-primary:   #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --text-tertiary:  #606060;
+  --border:        rgba(255, 255, 255, 0.05);
+  --border-medium: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.15);
+}
+
+/* 6. Void Space */
+.theme-void {
+  --bg-base:     #000000;
+  --bg-surface:  #050505;
+  --bg-elevated: #0a0a0a;
+  --bg-hover:    #121212;
+  --bg-active:   #1a1a1a;
+  --amber:       #7928ca;
+  --amber-dim:   rgba(121, 40, 202, 0.12);
+  --amber-glow:  rgba(121, 40, 202, 0.22);
+  --amber-soft:  #6120a1;
+  --teal:        #ffffff;
+  --teal-dim:    rgba(255, 255, 255, 0.12);
+  --text-primary:   #ffffff;
+  --text-secondary: #707070;
+  --text-tertiary:  #303030;
+  --border:        rgba(121, 40, 202, 0.15);
+  --border-medium: rgba(121, 40, 202, 0.25);
+  --border-strong: rgba(121, 40, 202, 0.35);
+}
+
+/* 7. Ethereal Light */
+.theme-ethereal-light {
+  --bg-base:     #f4f5f6;
+  --bg-surface:  #ffffff;
+  --bg-elevated: #eaebee;
+  --bg-hover:    #e0e2e6;
+  --bg-active:   #d4d7dd;
+  --amber:       #3b82f6;
+  --amber-dim:   rgba(59, 130, 246, 0.08);
+  --amber-glow:  rgba(59, 130, 246, 0.15);
+  --amber-soft:  #2563eb;
+  --teal:        #10b981;
+  --teal-dim:    rgba(16, 185, 129, 0.08);
+  --text-primary:   #1e293b;
+  --text-secondary: #64748b;
+  --text-tertiary:  #94a3b8;
+  --border:        rgba(30, 41, 59, 0.08);
+  --border-medium: rgba(30, 41, 59, 0.12);
+  --border-strong: rgba(30, 41, 59, 0.18);
+}
+
 /* ─── Reset ─── */
 *, *::before, *::after {
   box-sizing: border-box;
