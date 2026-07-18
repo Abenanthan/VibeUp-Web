@@ -3,6 +3,7 @@
     { "source": "/audio-proxy-aac/(.*)", "destination": "https://aac.saavncdn.com/$1" },
     { "source": "/audio-proxy-h/(.*)", "destination": "https://h.saavncdn.com/$1" },
     { "source": "/audio-proxy-c/(.*)", "destination": "https://c.saavncdn.com/$1" },
+    { "source": "/jiosaavn-search", "destination": "https://www.jiosaavn.com/api.php" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

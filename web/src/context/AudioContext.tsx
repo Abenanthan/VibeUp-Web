@@ -256,8 +256,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let resolvedSong = song;
 
     try {
-      // If no audio URL, resolve via getSongById
-      if (!song.audioUrl) {
+      // If no audio URL or if the URL is an encrypted token (doesn't start with http or /audio-proxy-), resolve via getSongById
+      const isInvalidUrl = !song.audioUrl || (!song.audioUrl.startsWith('http') && !song.audioUrl.startsWith('/audio-proxy-'));
+      if (isInvalidUrl) {
         const resolved = await saavnApi.getSongById(song.id);
         if (resolved && resolved.audioUrl) {
           resolvedSong = resolved;

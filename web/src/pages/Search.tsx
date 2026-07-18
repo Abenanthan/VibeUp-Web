@@ -11,11 +11,13 @@ const CATEGORIES = [
   { label: 'Tamil',    query: 'tamil hits 2025',        bg: 'linear-gradient(135deg,#3d1a5e,#6b2fa0)' },
   { label: 'Telugu',   query: 'telugu hits 2025',       bg: 'linear-gradient(135deg,#0a3a5c,#1565a0)' },
   { label: 'Hindi',    query: 'hindi hits 2025',        bg: 'linear-gradient(135deg,#5c2000,#a03800)' },
+  { label: 'English',  query: 'english hits 2025',      bg: 'linear-gradient(135deg,#0d3b2e,#1a7a5a)' },
   { label: 'Trending', query: 'trending songs 2025',    bg: 'linear-gradient(135deg,#0c4a30,#1a8a55)' },
   { label: 'Romantic', query: 'romantic love songs',    bg: 'linear-gradient(135deg,#5c0a2a,#a01c50)' },
   { label: 'Party',    query: 'party dance songs',      bg: 'linear-gradient(135deg,#5c3800,#a06000)' },
   { label: 'Chill',    query: 'chill relaxing songs',   bg: 'linear-gradient(135deg,#0a3040,#0e5070)' },
   { label: 'Workout',  query: 'workout gym songs',      bg: 'linear-gradient(135deg,#4a0808,#8a1414)' },
+  { label: 'Punjabi',  query: 'punjabi hits 2025',      bg: 'linear-gradient(135deg,#3b2a00,#7a5500)' },
 ];
 
 export const Search: React.FC = () => {

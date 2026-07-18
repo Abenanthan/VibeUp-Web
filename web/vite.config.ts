@@ -6,6 +6,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      // Direct JioSaavn API proxy — lets the browser call api.php without CORS
+      '/jiosaavn-search': {
+        target: 'https://www.jiosaavn.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/jiosaavn-search/, '/api.php'),
+      },
       '/audio-proxy-aac': {
         target: 'https://aac.saavncdn.com',
         changeOrigin: true,
