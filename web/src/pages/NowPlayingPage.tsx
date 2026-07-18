@@ -178,18 +178,18 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                 {lyricsLoading && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '12px' }}>
                     <div className="animate-spin" style={{ border: '2px solid var(--border-medium)', borderTopColor: 'var(--amber)', width: '24px', height: '24px', borderRadius: '50%' }} />
-                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>Loading lyrics…</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Loading lyrics…</p>
                   </div>
                 )}
                 {!lyricsLoading && lyricsState?.instrumental && (
                   <div style={{ textAlign: 'center', padding: '80px 0' }}>
-                    <p style={{ fontSize: '15px', fontWeight: 600, color: 'rgba(255,255,255,0.4)' }}>Instrumental</p>
-                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', marginTop: '6px' }}>No lyrics for this track</p>
+                    <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)' }}>Instrumental</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '6px' }}>No lyrics for this track</p>
                   </div>
                 )}
                 {!lyricsLoading && !lyricsState?.instrumental && !lyricsState?.plainLyrics && !lyricsState?.syncedLyrics && (
                   <div style={{ textAlign: 'center', padding: '80px 0' }}>
-                    <p style={{ fontSize: '14px', fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>No lyrics found</p>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-tertiary)' }}>No lyrics found</p>
                   </div>
                 )}
                 {!lyricsLoading && lyricsState?.synced && lyricsState.syncedLyrics && (
@@ -197,7 +197,25 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                     {lyricsState.syncedLyrics.map((line: LyricLine, idx: number) => {
                       const isActive = idx === activeIdx;
                       return (
-                        <p key={idx} ref={el => { lineRefs.current[idx] = el; }} onClick={() => seekTo(line.timeMs / 1000)} style={{ fontSize: isActive ? '21px' : '17px', fontWeight: 800, lineHeight: 1.5, cursor: 'pointer', transition: 'all 0.3s ease', color: isActive ? '#fff' : 'rgba(255,255,255,0.2)', letterSpacing: '-0.2px', margin: 0, padding: '3px 0' }} onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }} onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'rgba(255,255,255,0.2)'; }}>
+                        <p
+                          key={idx}
+                          ref={el => { lineRefs.current[idx] = el; }}
+                          onClick={() => seekTo(line.timeMs / 1000)}
+                          style={{
+                            fontSize: isActive ? '21px' : '17px',
+                            fontWeight: 800,
+                            lineHeight: 1.5,
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            color: isActive ? 'var(--amber)' : 'var(--text-secondary)',
+                            opacity: isActive ? 1 : 0.35,
+                            letterSpacing: '-0.2px',
+                            margin: 0,
+                            padding: '3px 0'
+                          }}
+                          onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.opacity = '0.75'; } }}
+                          onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.opacity = '0.35'; } }}
+                        >
                           {line.text}
                         </p>
                       );
@@ -205,7 +223,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                   </div>
                 )}
                 {!lyricsLoading && !lyricsState?.synced && lyricsState?.plainLyrics && (
-                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '15px', lineHeight: '1.9', whiteSpace: 'pre-line', fontWeight: 500 }}>{lyricsState.plainLyrics}</div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: '1.9', whiteSpace: 'pre-line', fontWeight: 500 }}>{lyricsState.plainLyrics}</div>
                 )}
               </div>
             </div>
