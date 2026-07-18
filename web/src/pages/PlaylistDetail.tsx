@@ -26,7 +26,7 @@ const totalDurationText = (songs: Song[]) => {
 
 export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setCurrentTab }) => {
   const { playlists, likedSongs, removeSongFromPlaylist, addSongToPlaylist, isLiked, toggleLike, addToRecentlyPlayed } = useLibrary();
-  const { playSong } = useAudio();
+  const { playSong, currentSong, isPlaying } = useAudio();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Song[]>([]);
@@ -85,9 +85,9 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
   if (!playlist && !isLikesTab) {
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-        <p style={{ color: '#6B7280' }}>Playlist not found.</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Playlist not found.</p>
         <button onClick={() => setCurrentTab('library')}
-          style={{ padding: '10px 24px', background: '#7C3AED', border: 'none', borderRadius: '10px', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>
+          style={{ padding: '10px 24px', background: 'var(--amber)', border: 'none', borderRadius: '10px', color: 'var(--bg-base)', cursor: 'pointer', fontWeight: 700 }}>
           Go Back
         </button>
       </div>
@@ -99,15 +99,13 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
   const coverImages = songs.slice(0, 4).map(s => s.imageUrl).filter(Boolean);
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', height: '100%', color: '#F3F4F6' }}>
+    <div style={{ flex: 1, overflowY: 'auto', height: '100%', color: 'var(--text-primary)' }}>
 
       {/* ── Hero Banner ── */}
       <div style={{
         position: 'relative',
         padding: '48px 32px 32px',
-        background: isLikesTab
-          ? 'linear-gradient(180deg, rgba(79,70,229,0.4) 0%, rgba(8,8,24,0) 100%)'
-          : 'linear-gradient(180deg, rgba(124,58,237,0.3) 0%, rgba(8,8,24,0) 100%)',
+        background: 'linear-gradient(180deg, var(--amber-dim) 0%, rgba(0,0,0,0) 100%)',
         overflow: 'hidden',
       }}>
         {/* Background blur from first song */}
@@ -128,7 +126,7 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
             style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               background: 'none', border: 'none', cursor: 'pointer',
-              color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600,
+              color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
               marginBottom: '28px',
               padding: 0,
             }}
@@ -143,9 +141,7 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
               borderRadius: '16px', flexShrink: 0,
               overflow: 'hidden',
               boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
-              background: isLikesTab
-                ? 'linear-gradient(135deg, #4F46E5, #7C3AED)'
-                : 'linear-gradient(135deg, #1E1B4B, #311042)',
+              background: 'var(--bg-elevated)',
             }}>
               {coverImages.length >= 4 ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', width: '100%', height: '100%' }}>
@@ -158,8 +154,8 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
               ) : (
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {isLikesTab
-                    ? <Heart size={64} fill="white" color="white" />
-                    : <Music size={64} color="rgba(255,255,255,0.4)" />
+                    ? <Heart size={64} fill="var(--amber)" color="var(--amber)" />
+                    : <Music size={64} color="var(--text-tertiary)" />
                   }
                 </div>
               )}
@@ -167,7 +163,7 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
 
             {/* Info */}
             <div style={{ flex: 1, minWidth: '200px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: '#A78BFA', marginBottom: '8px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--amber)', marginBottom: '8px' }}>
                 Playlist
               </p>
               <h2 style={{
@@ -178,8 +174,8 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
               }}>
                 {name}
               </h2>
-              {desc && <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', lineHeight: 1.5 }}>{desc}</p>}
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+              {desc && <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.5 }}>{desc}</p>}
+              <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
                 {songs.length} songs
                 {songs.length > 0 && ` · ${totalDurationText(songs)}`}
               </p>
@@ -195,15 +191,15 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
                   style={{
                     display: 'flex', alignItems: 'center', gap: '10px',
                     padding: '14px 28px',
-                    background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
+                    background: 'var(--amber)',
                     border: 'none', borderRadius: '100px',
-                    color: '#fff', fontWeight: 800, fontSize: '14px',
+                    color: 'var(--bg-base)', fontWeight: 800, fontSize: '14px',
                     cursor: 'pointer',
-                    boxShadow: '0 8px 28px rgba(124, 58, 237, 0.4)',
+                    boxShadow: '0 8px 28px var(--amber-glow)',
                     transition: 'transform 0.15s ease',
                   }}
                 >
-                  <Play size={18} fill="white" />
+                  <Play size={18} fill="currentColor" color="currentColor" />
                   Play
                 </button>
                 <button
@@ -211,10 +207,10 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
                   style={{
                     display: 'flex', alignItems: 'center', gap: '8px',
                     padding: '13px 22px',
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
                     borderRadius: '100px',
-                    color: '#fff', fontWeight: 700, fontSize: '13px',
+                    color: 'var(--text-primary)', fontWeight: 700, fontSize: '13px',
                     cursor: 'pointer',
                     backdropFilter: 'blur(8px)',
                   }}
@@ -229,10 +225,10 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
                   padding: '13px 22px',
-                  background: showSearch ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)',
-                  border: `1px solid ${showSearch ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                  background: showSearch ? 'var(--amber-dim)' : 'var(--bg-elevated)',
+                  border: `1px solid ${showSearch ? 'var(--amber)' : 'var(--border)'}`,
                   borderRadius: '100px',
-                  color: showSearch ? '#A78BFA' : 'rgba(255,255,255,0.7)',
+                  color: showSearch ? 'var(--amber)' : 'var(--text-secondary)',
                   fontWeight: 700, fontSize: '13px', cursor: 'pointer',
                 }}
               >
@@ -327,11 +323,11 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
           <div style={{
             display: 'grid', gridTemplateColumns: '40px 1fr auto auto',
             gap: '12px', padding: '0 12px 10px',
-            borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: '8px',
+            borderBottom: '1px solid var(--border)', marginBottom: '8px',
           }}>
-            <span style={{ fontSize: '11px', color: '#374151', fontWeight: 700 }}>#</span>
-            <span style={{ fontSize: '11px', color: '#374151', fontWeight: 700 }}>TITLE</span>
-            <span style={{ fontSize: '11px', color: '#374151', fontWeight: 700, paddingRight: '40px' }}>DURATION</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 700 }}>#</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 700 }}>TITLE</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 700, paddingRight: '40px' }}>DURATION</span>
             <span />
           </div>
         )}
@@ -339,15 +335,15 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
         {songs.length === 0 ? (
           <div style={{
             textAlign: 'center', padding: '60px 20px',
-            border: '1px dashed rgba(124,58,237,0.2)', borderRadius: '16px',
+            border: '1px dashed var(--border)', borderRadius: '16px',
           }}>
             <span style={{ fontSize: '40px', display: 'block', marginBottom: '12px' }}>
               {isLikesTab ? '💔' : '💿'}
             </span>
-            <p style={{ fontSize: '16px', fontWeight: 700, color: '#4B5563', marginBottom: '6px' }}>
+            <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
               {isLikesTab ? 'No liked songs yet' : 'This playlist is empty'}
             </p>
-            <p style={{ fontSize: '13px', color: '#374151' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>
               {isLikesTab ? 'Like songs while browsing to see them here.' : 'Click "Add Songs" above to get started.'}
             </p>
           </div>
@@ -365,17 +361,22 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
                 gap: '12px', alignItems: 'center',
                 padding: '8px 12px',
                 borderRadius: '10px',
-                background: isHovered ? 'rgba(255,255,255,0.05)' : 'transparent',
+                background: isHovered ? 'var(--bg-hover)' : 'transparent',
                 cursor: 'pointer',
                 transition: 'background 0.15s ease',
               }}
             >
               {/* # or play */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {isHovered
-                  ? <Play size={14} color="#7C3AED" fill="#7C3AED" />
-                  : <span style={{ fontSize: '13px', color: '#4B5563', fontWeight: 600 }}>{index + 1}</span>
-                }
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px' }}>
+                {currentSong?.id === song.id && isPlaying ? (
+                  <span style={{ width: '12px', height: '12px', display: 'flex', gap: '2px', alignItems: 'flex-end', justifyContent: 'center' }}>
+                    {[1,2,3].map(i => <span key={i} className="visualizer-bar" style={{ background: 'var(--amber)' }} />)}
+                  </span>
+                ) : isHovered ? (
+                  <Play size={14} color="var(--amber)" fill="var(--amber)" />
+                ) : (
+                  <span style={{ fontSize: '13px', color: currentSong?.id === song.id ? 'var(--amber)' : 'var(--text-tertiary)', fontWeight: 600 }}>{index + 1}</span>
+                )}
               </div>
 
               {/* Song info */}
@@ -383,17 +384,17 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
                 <img src={song.imageUrl} alt={song.title}
                   style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
                 <div style={{ overflow: 'hidden' }}>
-                  <p style={{ fontSize: '14px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p style={{ fontSize: '14px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: currentSong?.id === song.id ? 'var(--amber)' : 'var(--text-primary)' }}>
                     {song.title}
                   </p>
-                  <p style={{ fontSize: '12px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
                     {song.artist}
                   </p>
                 </div>
               </div>
 
               {/* Duration */}
-              <span style={{ fontSize: '13px', color: '#4B5563', fontWeight: 600 }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
                 {formatDuration(song.duration)}
               </span>
 
@@ -403,20 +404,20 @@ export const PlaylistDetail: React.FC<PlaylistDetailProps> = ({ playlistId, setC
                   onClick={() => toggleLike(song)}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',
-                    color: liked ? '#EF4444' : '#4B5563',
+                    color: liked ? 'var(--danger)' : 'var(--text-tertiary)',
                     opacity: isHovered || liked ? 1 : 0,
                     transition: 'opacity 0.15s',
                     display: 'flex', alignItems: 'center', padding: '6px',
                   }}
                 >
-                  <Heart size={14} fill={liked ? '#EF4444' : 'none'} />
+                  <Heart size={14} fill={liked ? 'var(--danger)' : 'none'} />
                 </button>
                 {!isLikesTab && (
                   <button
                     onClick={() => removeSongFromPlaylist(playlistId!, song.id)}
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
-                      color: '#EF4444',
+                      color: 'var(--danger)',
                       opacity: isHovered ? 1 : 0,
                       transition: 'opacity 0.15s',
                       display: 'flex', alignItems: 'center', padding: '6px',

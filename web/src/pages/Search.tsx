@@ -21,7 +21,7 @@ const CATEGORIES = [
 ];
 
 export const Search: React.FC = () => {
-  const { playSong } = useAudio();
+  const { playSong, currentSong, isPlaying } = useAudio();
   const { toggleLike, isLiked, playlists, addSongToPlaylist, addToRecentlyPlayed } = useLibrary();
 
   const [query, setQuery]           = useState('');
@@ -120,8 +120,16 @@ export const Search: React.FC = () => {
               const isHov = hovered === song.id;
               return (
                 <div key={song.id} onClick={() => handlePlay(song)} onMouseEnter={() => setHovered(song.id)} onMouseLeave={() => setHovered(null)} style={{ display: 'flex', alignItems: 'center', padding: '8px 10px', borderRadius: 'var(--radius-md)', background: isHov ? 'var(--bg-elevated)' : 'transparent', cursor: 'pointer', gap: '12px', transition: 'background 0.12s' }}>
-                  <div style={{ width: '26px', textAlign: 'center', flexShrink: 0 }}>
-                    {isHov ? <Play size={13} color="var(--amber)" fill="var(--amber)" /> : <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 500 }}>{idx + 1}</span>}
+                  <div style={{ width: '26px', textAlign: 'center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {currentSong?.id === song.id && isPlaying ? (
+                      <span style={{ width: '12px', height: '12px', display: 'flex', gap: '2px', alignItems: 'flex-end', justifyContent: 'center' }}>
+                        {[1,2,3].map(i => <span key={i} className="visualizer-bar" style={{ background: 'var(--amber)' }} />)}
+                      </span>
+                    ) : isHov ? (
+                      <Play size={13} color="var(--amber)" fill="var(--amber)" />
+                    ) : (
+                      <span style={{ fontSize: '12px', color: currentSong?.id === song.id ? 'var(--amber)' : 'var(--text-tertiary)', fontWeight: 600 }}>{idx + 1}</span>
+                    )}
                   </div>
                   <img src={song.imageUrl} alt={song.title} style={{ width: '42px', height: '42px', borderRadius: '7px', objectFit: 'cover', flexShrink: 0 }} />
                   <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>

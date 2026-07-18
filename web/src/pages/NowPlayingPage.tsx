@@ -181,22 +181,6 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                   }}
                 />
 
-                {/* Spindle hole of the vinyl disc */}
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: isDiskView ? '32px' : '0px',
-                  height: isDiskView ? '32px' : '0px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--bg-base)',
-                  border: isDiskView ? '4px solid rgba(0,0,0,0.9)' : 'none',
-                  zIndex: 2,
-                  boxShadow: 'inset 0 0 8px rgba(0,0,0,0.9)',
-                  transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                }} />
-
                 {/* Vinyl Grooves texture overlay */}
                 <div style={{
                   position: 'absolute',
