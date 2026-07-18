@@ -29,6 +29,10 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [prevVol, setPrevVol] = useState(volume);
   const [activeIdx, setActiveIdx] = useState(-1);
+  const [isDiskView, setIsDiskView] = useState(true);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
   const lyricsRef = useRef<HTMLDivElement>(null);
   const lineRefs  = useRef<(HTMLParagraphElement | null)[]>([]);
 
@@ -57,6 +61,28 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
   useEffect(() => { if (!isOpen) setShowPlaylist(false); }, [isOpen]);
 
   if (!currentSong) return null;
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const rotateY = ((x / rect.width) - 0.5) * 24; 
+    const rotateX = ((y / rect.height) - 0.5) * -24; 
+    
+    setTilt({ x: rotateX, y: rotateY });
+    setMousePos({ x, y });
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setTilt({ x: 0, y: 0 });
+  };
 
   const iconBtn = (onClick: () => void, active: boolean, children: React.ReactNode, title?: string) => (
     <button onClick={onClick} title={title} style={{ background: 'none', border: 'none', cursor: 'pointer', color: active ? 'var(--teal)' : 'rgba(255,255,255,0.45)', transition: 'color 0.2s', display: 'flex', alignItems: 'center', position: 'relative' }} onMouseEnter={e => (e.currentTarget.style.color = active ? 'var(--teal)' : 'rgba(255,255,255,0.85)')} onMouseLeave={e => (e.currentTarget.style.color = active ? 'var(--teal)' : 'rgba(255,255,255,0.45)')}>
@@ -109,10 +135,92 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
           {/* LEFT: art + controls */}
           <div style={{ width: '42%', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
 
-            {/* Album art */}
+             {/* Album art */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px', flexShrink: 0 }}>
-              <div style={{ width: 'min(275px, 100%)', aspectRatio: '1/1', borderRadius: '14px', overflow: 'hidden', boxShadow: `0 28px 70px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07)`, transform: isPlaying ? 'scale(1)' : 'scale(0.95)', transition: 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>
-                <img src={currentSong.imageUrl} alt={currentSong.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <div
+                onClick={() => setIsDiskView(!isDiskView)}
+                onMouseMove={handleMouseMove}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                className={isPlaying ? 'breathing-glow-active' : ''}
+                style={{
+                  position: 'relative',
+                  width: 'min(275px, 100%)',
+                  aspectRatio: '1/1',
+                  borderRadius: isDiskView ? '50%' : '14px',
+                  overflow: 'hidden',
+                  boxShadow: isHovered
+                    ? '0 32px 80px rgba(0,0,0,0.85), 0 0 35px var(--amber-glow)'
+                    : (!isPlaying
+                      ? (isDiskView
+                        ? '0 16px 40px rgba(0,0,0,0.5), 0 0 20px var(--amber-glow)'
+                        : '0 28px 70px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07)')
+                      : undefined),
+                  transform: isDiskView
+                    ? (isPlaying ? 'scale(1)' : 'scale(0.95)')
+                    : `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(${isHovered ? 1.04 : (isPlaying ? 1 : 0.95)})`,
+                  transition: isHovered
+                    ? 'transform 0.05s ease-out, border-radius 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.5s ease'
+                    : 'border-radius 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.5s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.5s ease',
+                  cursor: 'pointer',
+                }}
+              >
+                {/* Spinning Image */}
+                <img
+                  src={currentSong.imageUrl}
+                  alt={currentSong.title}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    animation: isDiskView ? 'spinVinyl 20s linear infinite' : 'none',
+                    animationPlayState: isPlaying ? 'running' : 'paused',
+                    borderRadius: isDiskView ? '50%' : '0%',
+                    transition: 'border-radius 0.5s ease',
+                  }}
+                />
+
+                {/* Spindle hole of the vinyl disc */}
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: isDiskView ? '32px' : '0px',
+                  height: isDiskView ? '32px' : '0px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--bg-base)',
+                  border: isDiskView ? '4px solid rgba(0,0,0,0.9)' : 'none',
+                  zIndex: 2,
+                  boxShadow: 'inset 0 0 8px rgba(0,0,0,0.9)',
+                  transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                }} />
+
+                {/* Vinyl Grooves texture overlay */}
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, transparent 35%, rgba(0,0,0,0.15) 40%, rgba(255,255,255,0.03) 45%, transparent 50%, rgba(0,0,0,0.15) 55%, rgba(255,255,255,0.03) 60%, transparent 65%)',
+                  pointerEvents: 'none',
+                  opacity: isDiskView ? 1 : 0,
+                  transition: 'opacity 0.5s ease',
+                  zIndex: 1,
+                }} />
+
+                {/* Interactive Glare/Reflection Layer */}
+                {!isDiskView && (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: `radial-gradient(circle at ${mousePos.x}px ${mousePos.y}px, rgba(255,255,255,0.12) 0%, transparent 60%)`,
+                    pointerEvents: 'none',
+                    opacity: isHovered ? 1 : 0,
+                    transition: 'opacity 0.3s ease',
+                    zIndex: 3,
+                  }} />
+                )}
               </div>
             </div>
 

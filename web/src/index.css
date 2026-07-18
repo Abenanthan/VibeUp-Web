@@ -373,3 +373,34 @@ input[type="range"]::-moz-range-thumb {
   background: #fff;
   cursor: pointer;
 }
+
+/* ─── Album Art Vinyl Rotation ─── */
+@keyframes spinVinyl {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vinyl-disk-spin {
+  animation: spinVinyl 15s linear infinite;
+}
+
+/* ─── Ambient Breathing Glow Animation ─── */
+@keyframes breathingGlow {
+  0% {
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 20px var(--amber-glow);
+  }
+  50% {
+    box-shadow: 0 28px 70px rgba(0,0,0,0.65), 0 0 45px var(--amber-glow);
+  }
+  100% {
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 20px var(--amber-glow);
+  }
+}
+
+.breathing-glow-active {
+  animation: breathingGlow 4s ease-in-out infinite;
+}
