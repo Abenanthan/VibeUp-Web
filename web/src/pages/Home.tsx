@@ -5,6 +5,7 @@ import { useLibrary } from '../context/LibraryContext';
 import { saavnApi } from '../services/api';
 import type { Song } from '../types';
 import { FadeInView, StaggerContainer, StaggerItem, HoverScale, MotionCard } from '../components/motion';
+import { ArtistCoverflow } from '../components/ArtistCoverflow';
 
 /* ── Horizontal scroll container ── */
 const HorizontalScroll: React.FC<{ children: React.ReactNode; gap?: string }> = ({ children, gap = '14px' }) => {
@@ -101,8 +102,27 @@ const SongCard: React.FC<{
 
   return (
     <StaggerItem style={{ width: '148px', flexShrink: 0, cursor: 'pointer', position: 'relative' }}>
-      <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
-        <MotionCard style={{ position: 'relative', width: '148px', height: '148px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', boxShadow: hov ? '0 10px 28px rgba(0,0,0,0.5)' : '0 3px 10px rgba(0,0,0,0.3)', transition: 'box-shadow 0.3s, transform 0.2s', transform: hov ? 'translateY(-4px) scale(1.02)' : 'none' }}>
+      <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ position: 'relative' }}>
+        {hov && (
+          <div
+            className="song-card-glow"
+            style={{
+              position: 'absolute',
+              inset: '-6px',
+              top: '-6px',
+              left: '-6px',
+              right: '-6px',
+              height: '148px',
+              borderRadius: '14px',
+              background: 'var(--gradient-main)',
+              opacity: 0.3,
+              filter: 'blur(14px)',
+              zIndex: 0,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+        <MotionCard style={{ position: 'relative', width: '148px', height: '148px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', zIndex: 1, border: hov ? '1px solid var(--accent)' : '1px solid transparent', boxShadow: hov ? '0 0 20px var(--accent-glow), 0 0 40px var(--magenta-glow), 0 8px 32px rgba(0,0,0,0.55)' : '0 3px 10px rgba(0,0,0,0.3)', transition: 'box-shadow 0.35s ease, transform 0.25s ease, border-color 0.25s', transform: hov ? 'translateY(-6px) scale(1.03)' : 'none' }}>
           <img src={song.imageUrl} alt={song.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s', transform: hov ? 'scale(1.04)' : 'scale(1)' }} />
           {/* Now playing teal indicator */}
           {isNowPlaying && (
@@ -113,7 +133,7 @@ const SongCard: React.FC<{
             <HoverScale scale={1.15} tapScale={0.9}>
               <button onClick={() => handlePlay(song, queue)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--accent-glow)', transform: hov ? 'scale(1)' : 'scale(0.8)', transition: 'transform 0.2s' }}>
                 {isNowPlaying && isPlaying ? <span style={{ width: '14px', height: '14px', display: 'flex', gap: '2px', alignItems: 'flex-end' }}>
-                  {[1,2,3].map(i => <span key={i} className="visualizer-bar" style={{ background: 'var(--bg-base)' }} />)}
+                  {[1, 2, 3].map(i => <span key={i} className="visualizer-bar" style={{ background: 'var(--bg-base)' }} />)}
                 </span> : <Play size={15} fill="#0d0c0a" color="#0d0c0a" style={{ marginLeft: '2px' }} />}
               </button>
             </HoverScale>
@@ -181,24 +201,32 @@ const Section: React.FC<{
 };
 
 /* ── Static data ── */
-const FAV_IDS = ['GWwnRe0u','rjkrTnma','m1iXOUID','mPTrDSun','__YIeFT-','uP7MlTHz','eLm-JvK4','SM-rvz75','qcVqPqk5','vRNpPA7_','yBmo2qWU','QWLY3Ls_','QkFUdVod','BH07HVc8','kehuVn2F','cDHlLKvW','_KjTxjcC'];
+const FAV_IDS = ['GWwnRe0u', 'rjkrTnma', 'm1iXOUID', 'mPTrDSun', '__YIeFT-', 'uP7MlTHz', 'eLm-JvK4', 'SM-rvz75', 'qcVqPqk5', 'vRNpPA7_', 'yBmo2qWU', 'QWLY3Ls_', 'QkFUdVod', 'BH07HVc8', 'kehuVn2F', 'cDHlLKvW', '_KjTxjcC'];
 
 const ARTISTS = [
-  { name: 'Anirudh',       image: 'https://c.saavncdn.com/artists/Anirudh_Ravichander_500x500.jpg',  query: 'Anirudh Ravichander' },
-  { name: 'Sid Sriram',    image: 'https://c.saavncdn.com/artists/Sid_Sriram_500x500.jpg',           query: 'Sid Sriram' },
-  { name: 'Arijit Singh',  image: 'https://c.saavncdn.com/artists/Arijit_Singh_500x500.jpg',         query: 'Arijit Singh' },
-  { name: 'GV Prakash',    image: 'https://c.saavncdn.com/artists/G_V_Prakash_Kumar_500x500.jpg',    query: 'GV Prakash' },
-  { name: 'Hiphop Tamizha',image: 'https://c.saavncdn.com/artists/Hiphop_Tamizha_500x500.jpg',      query: 'Hiphop Tamizha' },
-  { name: 'AR Rahman',     image: 'https://c.saavncdn.com/artists/AR_Rahman_500x500.jpg',            query: 'AR Rahman' },
+  { name: 'Anirudh', image: 'https://c.saavncdn.com/artists/Anirudh_Ravichander_500x500.jpg', query: 'Anirudh Ravichander' },
+  { name: 'Sid Sriram', image: 'https://c.saavncdn.com/artists/Sid_Sriram_500x500.jpg', query: 'Sid Sriram' },
+  { name: 'Arijit Singh', image: 'https://c.saavncdn.com/artists/Arijit_Singh_500x500.jpg', query: 'Arijit Singh' },
+  { name: 'Shreya Ghoshal', image: 'https://c.saavncdn.com/artists/Shreya_Ghoshal_500x500.jpg', query: 'Shreya Ghoshal' },
+  { name: 'Pritam', image: 'https://c.saavncdn.com/artists/Pritam_Chakraborty-20170711073326_500x500.jpg', query: 'Pritam' },
+  { name: 'Diljit Dosanjh', image: 'https://c.saavncdn.com/artists/Diljit_Dosanjh_500x500.jpg', query: 'Diljit Dosanjh' },
+  { name: 'GV Prakash', image: 'https://c.saavncdn.com/artists/G_V_Prakash_Kumar_500x500.jpg', query: 'GV Prakash' },
+  { name: 'Hiphop Tamizha', image: 'https://c.saavncdn.com/artists/Hiphop_Tamizha_500x500.jpg', query: 'Hiphop Tamizha' },
+  { name: 'AR Rahman', image: 'https://c.saavncdn.com/artists/AR_Rahman_500x500.jpg', query: 'AR Rahman' },
+  { name: 'Yo Yo Honey Singh', image: 'https://c.saavncdn.com/artists/Yo_Yo_Honey_Singh_500x500.jpg', query: 'Yo Yo Honey Singh' },
+  { name: 'Yuvan Shankar Raja', image: 'https://c.saavncdn.com/artists/Yuvan_Shankar_Raja_500x500.jpg', query: 'Yuvan Shankar Raja' },
+  { name: 'Harris Jayaraj', image: 'https://c.saavncdn.com/artists/Harris_Jayaraj_500x500.jpg', query: 'Harris Jayaraj' },
+  { name: 'Santhosh Narayanan', image: 'https://c.saavncdn.com/artists/Santhosh_Narayanan_500x500.jpg', query: 'Santhosh Narayanan' },
+  { name: 'Devi Sri Prasad', image: 'https://c.saavncdn.com/artists/Devi_Sri_Prasad_500x500.jpg', query: 'Devi Sri Prasad' },
 ];
 
 const MOODS = [
-  { label: 'Romantic',  query: 'romantic love songs',       bg: 'linear-gradient(135deg, #7a1f52 0%, #d6407e 100%)' },
-  { label: 'Party',     query: 'party dance songs',         bg: 'linear-gradient(135deg, #4a1d7a 0%, #a855f7 100%)' },
-  { label: 'Chill',     query: 'chill relaxing songs',      bg: 'linear-gradient(135deg, #0c3a52 0%, #1591b0 100%)' },
-  { label: 'Sad',       query: 'sad emotional songs',       bg: 'linear-gradient(135deg, #1e1a40 0%, #3a2d6e 100%)' },
-  { label: 'Focus',     query: 'focus concentration music', bg: 'linear-gradient(135deg, #241a52 0%, #4f46c8 100%)' },
-  { label: 'Workout',   query: 'workout gym songs',         bg: 'linear-gradient(135deg, #5a0c3a 0%, #c01e6e 100%)' },
+  { label: 'Romantic', query: 'romantic love songs', bg: 'linear-gradient(135deg, #7a1f52 0%, #d6407e 100%)' },
+  { label: 'Party', query: 'party dance songs', bg: 'linear-gradient(135deg, #4a1d7a 0%, #a855f7 100%)' },
+  { label: 'Chill', query: 'chill relaxing songs', bg: 'linear-gradient(135deg, #0c3a52 0%, #1591b0 100%)' },
+  { label: 'Sad', query: 'sad emotional songs', bg: 'linear-gradient(135deg, #1e1a40 0%, #3a2d6e 100%)' },
+  { label: 'Focus', query: 'focus concentration music', bg: 'linear-gradient(135deg, #241a52 0%, #4f46c8 100%)' },
+  { label: 'Workout', query: 'workout gym songs', bg: 'linear-gradient(135deg, #5a0c3a 0%, #c01e6e 100%)' },
 ];
 
 export const Home: React.FC<{
@@ -208,13 +236,13 @@ export const Home: React.FC<{
   const { playSong, currentSong } = useAudio();
   const { recentlyPlayed, addToRecentlyPlayed } = useLibrary();
 
-  const [favourites, setFavourites]   = useState<Song[]>([]);
-  const [trending, setTrending]       = useState<Song[]>([]);
+  const [favourites, setFavourites] = useState<Song[]>([]);
+  const [trending, setTrending] = useState<Song[]>([]);
   const [newReleases, setNewReleases] = useState<Song[]>([]);
-  const [tamilHits, setTamilHits]     = useState<Song[]>([]);
-  const [teluguHits, setTeluguHits]   = useState<Song[]>([]);
-  const [hindiHits, setHindiHits]     = useState<Song[]>([]);
-  const [loading, setLoading]         = useState(true);
+  const [tamilHits, setTamilHits] = useState<Song[]>([]);
+  const [teluguHits, setTeluguHits] = useState<Song[]>([]);
+  const [hindiHits, setHindiHits] = useState<Song[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   const hour = new Date().getHours();
@@ -283,7 +311,7 @@ export const Home: React.FC<{
                     <StaggerItem key={song.id}>
                       <HoverScale scale={1.03} tapScale={0.97}>
                         <div style={{ position: 'relative', width: '100%' }}>
-                          <button onClick={() => handlePlay(song, recentlyPlayed)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px 7px 7px', background: active ? 'var(--accent-dim)' : 'var(--bg-elevated)', border: `1px solid ${active ? 'var(--accent-glow)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left', transition: 'background 0.15s, border-color 0.15s', fontFamily: 'var(--font)' }} onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-hover)'; }}} onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-elevated)'; }}}>
+                          <button onClick={() => handlePlay(song, recentlyPlayed)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px 7px 7px', background: active ? 'var(--accent-dim)' : 'var(--bg-elevated)', border: `1px solid ${active ? 'var(--accent-glow)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left', transition: 'background 0.15s, border-color 0.15s', fontFamily: 'var(--font)' }} onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-hover)'; } }} onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-elevated)'; } }}>
                             <img src={song.imageUrl} alt={song.title} style={{ width: '38px', height: '38px', borderRadius: '7px', objectFit: 'cover', flexShrink: 0 }} />
                             <div style={{ overflow: 'hidden', flex: 1 }}>
                               <p style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: active ? 'var(--accent)' : 'var(--text-primary)' }}>{song.title}</p>
@@ -325,32 +353,22 @@ export const Home: React.FC<{
             </StaggerContainer>
           </FadeInView>
 
-          <Section title="Favourites"   songs={favourites}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
-          <Section title="Trending Now" songs={trending}     activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
-          <Section title="New Releases" songs={newReleases}  activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
- 
-          {/* Artists */}
+          <Section title="Favourites" songs={favourites} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Trending Now" songs={trending} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="New Releases" songs={newReleases} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+
+          {/* Artists — scroll-driven 3D coverflow */}
           <FadeInView direction="left" delay={0.1} style={{ marginBottom: '38px', minWidth: 0 }}>
             <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', letterSpacing: '-0.2px' }}>Artists</h3>
-            <HorizontalScroll gap="20px">
-              <StaggerContainer style={{ display: 'flex', gap: '20px' }}>
-                {ARTISTS.map(art => (
-                  <StaggerItem key={art.name}>
-                    <HoverScale scale={1.1} tapScale={0.95} onClick={() => onArtistClick(null, art.query)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '9px', flexShrink: 0, cursor: 'pointer', width: '88px' }}>
-                      <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--border-medium)', transition: 'border-color 0.2s' }} onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-medium)')}>
-                        <img src={art.image} alt={art.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                      <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.3 }}>{art.name}</span>
-                    </HoverScale>
-                  </StaggerItem>
-                ))}
-              </StaggerContainer>
-            </HorizontalScroll>
+            <ArtistCoverflow
+              artists={ARTISTS.map(a => ({ image: a.image, name: a.name, query: a.query }))}
+              onArtistClick={onArtistClick}
+            />
           </FadeInView>
- 
-          <Section title="Tamil Hits"   songs={tamilHits}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
-          <Section title="Telugu Hits"  songs={teluguHits}  activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
-          <Section title="Hindi Hits"   songs={hindiHits}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+
+          <Section title="Tamil Hits" songs={tamilHits} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Telugu Hits" songs={teluguHits} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Hindi Hits" songs={hindiHits} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
         </>
       )}
     </div>
