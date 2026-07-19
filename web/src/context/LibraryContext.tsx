@@ -7,8 +7,9 @@ interface LibraryContextType {
   recentlyPlayed: Song[];
   toggleLike: (song: Song) => void;
   isLiked: (songId: string) => boolean;
-  createPlaylist: (name: string, description: string) => string;
-  deletePlaylist: (playlistId: string) => void;
+  createPlaylist: (name: string, description?: string) => string;
+  removePlaylist: (playlistId: string) => void;
+  reorderPlaylist: (playlistId: string, fromIndex: number, toIndex: number) => void;
   renamePlaylist: (playlistId: string, newName: string) => void;
   addSongToPlaylist: (playlistId: string, song: Song) => void;
   removeSongFromPlaylist: (playlistId: string, songId: string) => void;
@@ -66,7 +67,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return likedSongs.some(s => s.id === songId);
   };
 
-  const createPlaylist = (name: string, description: string): string => {
+  const createPlaylist = (name: string, description: string = ''): string => {
     const id = crypto.randomUUID();
     const newPlaylist: Playlist = {
       id,
@@ -79,8 +80,18 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return id;
   };
 
-  const deletePlaylist = (playlistId: string) => {
+  const removePlaylist = (playlistId: string) => {
     savePlaylists(playlists.filter(p => p.id !== playlistId));
+  };
+
+  const reorderPlaylist = (playlistId: string, fromIndex: number, toIndex: number) => {
+    savePlaylists(playlists.map(p => {
+      if (p.id !== playlistId) return p;
+      const newSongIds = [...p.songIds];
+      const [movedItem] = newSongIds.splice(fromIndex, 1);
+      newSongIds.splice(toIndex, 0, movedItem);
+      return { ...p, songIds: newSongIds };
+    }));
   };
 
   const renamePlaylist = (playlistId: string, newName: string) => {
@@ -132,7 +143,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         toggleLike,
         isLiked,
         createPlaylist,
-        deletePlaylist,
+        removePlaylist,
+        reorderPlaylist,
         renamePlaylist,
         addSongToPlaylist,
         removeSongFromPlaylist,

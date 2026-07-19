@@ -8,16 +8,16 @@ import type { Song } from '../types';
 const fmtDur = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
 const CATEGORIES = [
-  { label: 'Tamil',    query: 'tamil hits 2025',        bg: 'linear-gradient(135deg,#3d1a5e,#6b2fa0)' },
-  { label: 'Telugu',   query: 'telugu hits 2025',       bg: 'linear-gradient(135deg,#0a3a5c,#1565a0)' },
-  { label: 'Hindi',    query: 'hindi hits 2025',        bg: 'linear-gradient(135deg,#5c2000,#a03800)' },
-  { label: 'English',  query: 'english hits 2025',      bg: 'linear-gradient(135deg,#0d3b2e,#1a7a5a)' },
-  { label: 'Trending', query: 'trending songs 2025',    bg: 'linear-gradient(135deg,#0c4a30,#1a8a55)' },
-  { label: 'Romantic', query: 'romantic love songs',    bg: 'linear-gradient(135deg,#5c0a2a,#a01c50)' },
-  { label: 'Party',    query: 'party dance songs',      bg: 'linear-gradient(135deg,#5c3800,#a06000)' },
-  { label: 'Chill',    query: 'chill relaxing songs',   bg: 'linear-gradient(135deg,#0a3040,#0e5070)' },
-  { label: 'Workout',  query: 'workout gym songs',      bg: 'linear-gradient(135deg,#4a0808,#8a1414)' },
-  { label: 'Punjabi',  query: 'punjabi hits 2025',      bg: 'linear-gradient(135deg,#3b2a00,#7a5500)' },
+  { label: 'Tamil',    query: 'tamil hits 2025',        bg: 'linear-gradient(135deg,#3d1a5e,#8b3fd6)' },
+  { label: 'Telugu',   query: 'telugu hits 2025',       bg: 'linear-gradient(135deg,#0a3a5c,#1591b0)' },
+  { label: 'Hindi',    query: 'hindi hits 2025',        bg: 'linear-gradient(135deg,#4a1160,#c026a3)' },
+  { label: 'English',  query: 'english hits 2025',      bg: 'linear-gradient(135deg,#1a1250,#5b52d6)' },
+  { label: 'Trending', query: 'trending songs 2025',    bg: 'linear-gradient(135deg,#5a1246,#ec4899)' },
+  { label: 'Romantic', query: 'romantic love songs',    bg: 'linear-gradient(135deg,#5c0a2a,#d6407e)' },
+  { label: 'Party',    query: 'party dance songs',      bg: 'linear-gradient(135deg,#3a1670,#a855f7)' },
+  { label: 'Chill',    query: 'chill relaxing songs',   bg: 'linear-gradient(135deg,#0a3040,#1591b0)' },
+  { label: 'Workout',  query: 'workout gym songs',      bg: 'linear-gradient(135deg,#4a0830,#c01e6e)' },
+  { label: 'Punjabi',  query: 'punjabi hits 2025',      bg: 'linear-gradient(135deg,#2a1a5e,#6d3fd6)' },
 ];
 
 export const Search: React.FC = () => {

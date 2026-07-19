@@ -1,522 +1,155 @@
 import React, { useState } from 'react';
-import { Home, Search, Library, Plus, Music2, Trash2 } from 'lucide-react';
+import { Home, Search, Library, Plus, ListMusic, MoreVertical, Heart, X } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
-import type { Playlist } from '../types';
+import { HoverScale, StaggerContainer, StaggerItem, AnimatePresence, motion, ModalOverlay } from '../components/motion';
+import logoImg from '../assets/image.png';
 
-interface SidebarProps {
-  currentTab: string;
-  setCurrentTab: (tab: string) => void;
-  setSelectedPlaylistId: (id: string | null) => void;
-}
-
-const THEMES = [
-  { id: 'amber-dark', name: 'Amber Dark (Default)', color: '#f0a030' },
-  { id: 'teal-nebula', name: 'Teal Nebula', color: '#34d4a8' },
-  { id: 'nordic-forest', name: 'Nordic Forest', color: '#76a882' },
-  { id: 'rose-gold', name: 'Rose Gold', color: '#d4a29c' },
-  { id: 'cyberpunk', name: 'Cyberpunk Neon', color: '#ff007f' },
-  { id: 'obsidian', name: 'Obsidian Glass', color: '#a0a0b0' },
-  { id: 'void', name: 'Void Space', color: '#7928ca' },
-  { id: 'ethereal-light', name: 'Ethereal Light', color: '#3b82f6' },
+const NAV_ITEMS = [
+  { id: 'home', icon: Home, label: 'Home' },
+  { id: 'search', icon: Search, label: 'Search' },
+  { id: 'library', icon: Library, label: 'Your Library' },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  currentTab,
-  setCurrentTab,
-  setSelectedPlaylistId,
-}) => {
-  const { playlists, createPlaylist, deletePlaylist } = useLibrary();
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newListName, setNewListName] = useState('');
-  const [newListDesc, setNewListDesc] = useState('');
-  const [activeTheme, setActiveTheme] = useState(() => {
-    return localStorage.getItem('vibeup_theme') || 'amber-dark';
-  });
+export const Sidebar: React.FC<{
+  currentTab: string;
+  setCurrentTab: (tab: string) => void;
+  setActivePlaylistId: (id: string) => void;
+}> = ({ currentTab, setCurrentTab, setActivePlaylistId }) => {
+  const { playlists, createPlaylist, removePlaylist } = useLibrary();
 
-  const handleThemeChange = (themeId: string) => {
-    setActiveTheme(themeId);
-    localStorage.setItem('vibeup_theme', themeId);
-    document.documentElement.className = `theme-${themeId}`;
-  };
+  const [showCreate, setShowCreate] = useState(false);
+  const [newPlName, setNewPlName] = useState('');
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newListName.trim()) {
-      const id = createPlaylist(newListName.trim(), newListDesc.trim());
-      setNewListName('');
-      setNewListDesc('');
-      setShowCreateModal(false);
-      setSelectedPlaylistId(id);
-      setCurrentTab('playlist-detail');
+  const handleCreate = () => {
+    if (newPlName.trim()) {
+      createPlaylist(newPlName.trim());
+      setNewPlName('');
+      setShowCreate(false);
     }
   };
 
-  const handlePlaylistClick = (playlistId: string) => {
-    setSelectedPlaylistId(playlistId);
-    setCurrentTab('playlist-detail');
-  };
-
-  const navItems = [
-    { id: 'home',    label: 'Home',        icon: Home    },
-    { id: 'search',  label: 'Search',      icon: Search  },
-    { id: 'library', label: 'Library',     icon: Library },
-  ];
-
   return (
-    <>
-      <aside style={{
-        width: '252px',
-        minWidth: '252px',
-        backgroundColor: 'var(--bg-surface)',
-        borderRight: '1px solid var(--border)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        paddingBottom: '80px',
-      }}>
+    <div onClick={() => setActiveMenu(null)} style={{ width: '260px', height: '100%', background: 'var(--bg-surface)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
 
-        {/* ── Brand ── */}
-        <div style={{ padding: '26px 20px 22px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Geometric logo mark */}
-            <div style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '9px',
-              background: 'var(--amber)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="2" y="10" width="3" height="6" rx="1.5" fill="var(--bg-base)"/>
-                <rect x="7" y="6"  width="3" height="10" rx="1.5" fill="var(--bg-base)"/>
-                <rect x="12" y="2" width="3" height="14" rx="1.5" fill="var(--bg-base)"/>
-              </svg>
-            </div>
-            <div>
-              <h1 style={{
-                fontSize: '17px',
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.4px',
-                lineHeight: 1,
-              }}>
-                VibeUp
-              </h1>
-              <p style={{
-                fontSize: '9px',
-                color: 'var(--text-tertiary)',
-                marginTop: '3px',
-                letterSpacing: '1.2px',
-                textTransform: 'uppercase',
-                fontWeight: 500,
-              }}>
-                Music
-              </p>
-            </div>
-          </div>
+      {/* Logo Area */}
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, type: 'spring' }} style={{ padding: '24px 20px 18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+          <img src={logoImg} alt="VibeUp" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
+        <h1 className="gradient-text" style={{ fontSize: '22px', fontWeight: 900, letterSpacing: '-0.5px' }}>VibeUp</h1>
+      </motion.div>
 
-        {/* ── Nav ── */}
-        <nav style={{ padding: '0 12px', marginBottom: '6px' }}>
-          {navItems.map(({ id, label, icon: Icon }) => {
-            const isActive = currentTab === id || (currentTab === 'playlist-detail' && id === 'library');
+      {/* Main Navigation */}
+      <div style={{ padding: '0 12px', marginBottom: '16px' }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {NAV_ITEMS.map((item, i) => {
+            const Icon = item.icon;
+            const active = currentTab === item.id;
             return (
-              <button
-                key={id}
-                onClick={() => setCurrentTab(id)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '10px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  marginBottom: '2px',
-                  fontSize: '13px',
-                  fontWeight: isActive ? 600 : 400,
-                  fontFamily: 'var(--font)',
-                  transition: 'background 0.15s ease, color 0.15s ease',
-                  background: isActive ? 'var(--amber-dim)' : 'transparent',
-                  color: isActive ? 'var(--amber)' : 'var(--text-secondary)',
-                  textAlign: 'left',
-                  position: 'relative',
-                }}
-                onMouseEnter={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'var(--bg-hover)';
-                    e.currentTarget.style.color = 'var(--text-primary)';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                  }
-                }}
-              >
-                {isActive && (
-                  <span style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: '3px',
-                    height: '56%',
-                    background: 'var(--amber)',
-                    borderRadius: '0 3px 3px 0',
-                  }} />
-                )}
-                <Icon size={16} strokeWidth={isActive ? 2.5 : 1.8} />
-                <span>{label}</span>
-              </button>
+              <motion.li key={item.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.05 }}>
+                <button
+                  onClick={() => setCurrentTab(item.id)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, color: active ? 'var(--text-primary)' : 'var(--text-secondary)', transition: 'color 0.2s', fontFamily: 'var(--font)', position: 'relative', background: 'transparent' }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--text-primary)'; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.color = active ? 'var(--text-primary)' : 'var(--text-secondary)'; }}
+                >
+                  {active && (
+                    <motion.div layoutId="sidebar-active" style={{ position: 'absolute', inset: 0, background: 'var(--gradient-glass)', borderRadius: 'var(--radius-md)', zIndex: 0, border: '1px solid var(--border-medium)' }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
+                  )}
+                  <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon size={18} color={active ? 'var(--accent)' : 'currentColor'} />
+                  </span>
+                  <span style={{ position: 'relative', zIndex: 1 }}>{item.label}</span>
+                </button>
+              </motion.li>
             );
           })}
-        </nav>
+        </ul>
+      </div>
 
-        {/* ── Divider ── */}
-        <div style={{ height: '1px', background: 'var(--border)', margin: '6px 20px 14px' }} />
+      <div style={{ padding: '0 20px', margin: '8px 0' }}>
+        <div style={{ height: '1px', background: 'var(--border)' }} />
+      </div>
 
-        {/* ── Playlists header ── */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px 10px',
-        }}>
-          <span style={{
-            fontSize: '9px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '1.5px',
-            color: 'var(--text-tertiary)',
-          }}>
-            Playlists
-          </span>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            title="New playlist"
-            style={{
-              background: 'var(--bg-hover)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-              width: '24px',
-              height: '24px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-secondary)',
-              transition: 'all 0.15s ease',
-              flexShrink: 0,
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'var(--amber)';
-              e.currentTarget.style.color = '#0d0c0a';
-              e.currentTarget.style.borderColor = 'var(--amber)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'var(--bg-hover)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-            }}
-          >
-            <Plus size={12} />
+      {/* Playlists Header */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} style={{ padding: '8px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-tertiary)' }}>Playlists</span>
+        <HoverScale scale={1.2} tapScale={0.9}>
+          <button onClick={() => setShowCreate(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}>
+            <Plus size={16} />
           </button>
-        </div>
+        </HoverScale>
+      </motion.div>
 
-        {/* ── Playlist list ── */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px' }}>
-          {playlists.length === 0 ? (
-            <div style={{ padding: '10px 6px' }}>
-              <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                No playlists yet.
-              </p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                style={{
-                  marginTop: '6px',
-                  fontSize: '11px',
-                  color: 'var(--amber)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                  fontWeight: 600,
-                  fontFamily: 'var(--font)',
-                }}
-              >
-                + New playlist
-              </button>
-            </div>
-          ) : (
-            playlists.map((playlist: Playlist) => (
-              <div
-                key={playlist.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: '1px',
-                  transition: 'background 0.12s ease',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                <button
-                  onClick={() => handlePlaylistClick(playlist.id)}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '9px',
-                    padding: '7px 10px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--text-secondary)',
-                    fontSize: '12px',
-                    fontWeight: 400,
-                    fontFamily: 'var(--font)',
-                    textAlign: 'left',
-                    overflow: 'hidden',
-                    transition: 'color 0.12s ease',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
-                >
-                  <div style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--bg-active)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    <Music2 size={12} color="var(--text-tertiary)" strokeWidth={1.8} />
-                  </div>
-                  <span style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {playlist.name}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Delete "${playlist.name}"?`)) {
-                      deletePlaylist(playlist.id);
-                      if (currentTab === 'playlist-detail') setCurrentTab('library');
-                    }
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--danger)',
-                    padding: '7px 8px',
-                    opacity: 0,
-                    transition: 'opacity 0.15s ease',
-                    flexShrink: 0,
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
-                  title="Delete playlist"
-                >
-                  <Trash2 size={11} />
-                </button>
+      {/* Playlists List */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 12px', display: 'flex', flexDirection: 'column', gap: '2px' }} className="hide-scrollbar">
+        <StaggerContainer staggerDelay={0.04}>
+          <StaggerItem>
+            <button onClick={() => { setActivePlaylistId('liked'); setCurrentTab('playlist_detail'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, fontFamily: 'var(--font)', transition: 'background 0.15s, color 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-hover)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'linear-gradient(135deg, #a855f7, #e879f9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Heart size={13} fill="#fff" color="#fff" />
               </div>
-            ))
-          )}
-        </div>
-        {/* ── Theme Selector ── */}
-        <div style={{
-          padding: '16px 20px',
-          borderTop: '1px solid var(--border)',
-          marginTop: 'auto',
-          backgroundColor: 'var(--bg-surface)',
-        }}>
-          <p style={{
-            fontSize: '9px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '1.5px',
-            color: 'var(--text-tertiary)',
-            marginBottom: '10px'
-          }}>
-            Theme
-          </p>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '8px',
-          }}>
-            {THEMES.map(theme => {
-              const isSelected = activeTheme === theme.id;
-              return (
-                <button
-                  key={theme.id}
-                  onClick={() => handleThemeChange(theme.id)}
-                  title={theme.name}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: 'var(--radius-md)',
-                    background: theme.color,
-                    border: isSelected ? '2px solid var(--text-primary)' : '1px solid var(--border-medium)',
-                    cursor: 'pointer',
-                    padding: 0,
-                    boxShadow: isSelected ? '0 0 10px var(--amber-glow)' : 'none',
-                    transition: 'transform 0.15s ease, border-color 0.15s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'scale(1.1)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                >
-                  {isSelected && (
-                    <div style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: theme.id === 'ethereal-light' ? '#1e293b' : '#ffffff',
-                    }} />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </aside>
+              <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Liked Songs</span>
+            </button>
+          </StaggerItem>
 
-      {/* ── Create Playlist Modal ── */}
-      {showCreateModal && (
-        <div
-          onClick={() => setShowCreateModal(false)}
-          style={{
-            position: 'fixed', inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            backdropFilter: 'blur(6px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000, padding: '16px',
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              backgroundColor: 'var(--bg-elevated)',
-              border: '1px solid var(--border-medium)',
-              borderRadius: 'var(--radius-xl)',
-              width: '100%', maxWidth: '360px',
-              padding: '28px',
-              boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
-            }}
-          >
-            <h3 style={{ fontWeight: 700, fontSize: '17px', marginBottom: '6px', color: 'var(--text-primary)' }}>
-              New Playlist
-            </h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-              Name your playlist to get started.
-            </p>
-            <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {playlists.map(pl => {
+            const menuOpen = activeMenu === pl.id;
+            return (
+              <StaggerItem key={pl.id}>
+                <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+                  <button onClick={() => { setActivePlaylistId(pl.id); setCurrentTab('playlist_detail'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, fontFamily: 'var(--font)', transition: 'background 0.15s, color 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-hover)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid var(--border)' }}>
+                      <ListMusic size={13} color="var(--text-tertiary)" />
+                    </div>
+                    <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pl.name}</span>
+                    <button onClick={e => { e.stopPropagation(); setActiveMenu(menuOpen ? null : pl.id); }} style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--text-tertiary)', opacity: 0.5, transition: 'opacity 0.15s' }} onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}><MoreVertical size={14} /></button>
+                  </button>
+                  <AnimatePresence>
+                    {menuOpen && (
+                      <motion.div initial={{ opacity: 0, scale: 0.9, y: 0 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 0 }} style={{ position: 'absolute', top: '34px', right: '12px', background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '5px', zIndex: 50, minWidth: '130px', boxShadow: '0 12px 32px rgba(0,0,0,0.6)' }}>
+                        <button onClick={() => { removePlaylist(pl.id); setActiveMenu(null); if (currentTab === 'playlist_detail') setCurrentTab('library'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 10px', borderRadius: '7px', color: 'var(--danger)', fontSize: '12px', fontWeight: 500, fontFamily: 'var(--font)' }}>Delete playlist</button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </StaggerItem>
+            );
+          })}
+        </StaggerContainer>
+      </div>
+
+      {/* Create Playlist Modal */}
+      <AnimatePresence>
+        {showCreate && (
+          <ModalOverlay onClose={() => setShowCreate(false)}>
+            <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-lg)', padding: '28px', width: '90vw', maxWidth: '380px', boxShadow: '0 24px 64px rgba(0,0,0,0.8)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>New Playlist</h3>
+                <HoverScale scale={1.1} tapScale={0.9}>
+                  <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}><X size={18} /></button>
+                </HoverScale>
+              </div>
               <input
-                type="text"
-                placeholder="Playlist name"
-                required
-                autoFocus
-                value={newListName}
-                onChange={e => setNewListName(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'var(--bg-hover)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '11px 14px',
-                  fontSize: '13px',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                  fontFamily: 'var(--font)',
-                  transition: 'border-color 0.15s ease',
-                }}
-                onFocus={e => (e.currentTarget.style.borderColor = 'var(--amber)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                type="text" autoFocus placeholder="My awesome playlist" value={newPlName}
+                onChange={e => setNewPlName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setShowCreate(false); }}
+                style={{ width: '100%', background: 'var(--bg-base)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font)', outline: 'none', marginBottom: '24px', transition: 'border-color 0.2s', boxSizing: 'border-box' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--border-medium)'}
               />
-              <textarea
-                placeholder="Description (optional)"
-                value={newListDesc}
-                onChange={e => setNewListDesc(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'var(--bg-hover)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '11px 14px',
-                  fontSize: '13px',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                  resize: 'none',
-                  height: '76px',
-                  fontFamily: 'var(--font)',
-                  transition: 'border-color 0.15s ease',
-                }}
-                onFocus={e => (e.currentTarget.style.borderColor = 'var(--amber)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-              />
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '6px' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  style={{
-                    padding: '9px 18px',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--bg-hover)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    fontFamily: 'var(--font)',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    padding: '9px 22px',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--amber)',
-                    border: 'none',
-                    color: '#0d0c0a',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    fontFamily: 'var(--font)',
-                    transition: 'background 0.15s ease',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--amber-soft)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--amber)')}
-                >
-                  Create
-                </button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <HoverScale scale={1.05} tapScale={0.95}>
+                  <button onClick={() => setShowCreate(false)} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '9px 18px', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Cancel</button>
+                </HoverScale>
+                <HoverScale scale={1.05} tapScale={0.95}>
+                  <button onClick={handleCreate} disabled={!newPlName.trim()} className="neon-btn" style={{ padding: '9px 18px', fontSize: '13px', fontFamily: 'var(--font)', opacity: newPlName.trim() ? 1 : 0.5 }}>Create</button>
+                </HoverScale>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </>
+            </div>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
