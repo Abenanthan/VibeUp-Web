@@ -208,11 +208,19 @@ export const saavnApi = {
       // ── Step 3: Fallback to Worker search with languages injected ───────────
       const workerJson = await safeFetch(
         `${WORKER_BASE}api/search/songs?query=${enc}&limit=${limit}&languages=english,hindi,punjabi,tamil,telugu`
-      ) as { data?: { results?: unknown[] } } | null;
+      ) as any;
 
-      if (workerJson?.data?.results?.length) {
-        const workerSongs = workerJson.data.results.map(mapWorkerDto).filter((s) => s.id);
-        const filteredWorker = workerSongs.filter((song) => {
+      const rawResults = (
+        Array.isArray(workerJson?.data)
+          ? workerJson.data
+          : Array.isArray(workerJson?.data?.results)
+          ? workerJson.data.results
+          : null
+      ) as any[] | null;
+
+      if (rawResults && rawResults.length > 0) {
+        const workerSongs = rawResults.map(mapWorkerDto).filter((s: Song) => s.id);
+        const filteredWorker = workerSongs.filter((song: Song) => {
           const titleLower = song.title.toLowerCase();
           return !(
             titleLower.includes('tribute') ||
@@ -223,7 +231,7 @@ export const saavnApi = {
             titleLower.includes('remix') ||
             titleLower.includes('cover')
           );
-        }).sort((a, b) => getSortScore(b, query, cleaned) - getSortScore(a, query, cleaned));
+        }).sort((a: Song, b: Song) => getSortScore(b, query, cleaned) - getSortScore(a, query, cleaned));
         return (filteredWorker.length === 0 ? workerSongs : filteredWorker).slice(0, limit);
       }
 

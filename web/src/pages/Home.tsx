@@ -78,7 +78,7 @@ const HorizontalScroll: React.FC<{ children: React.ReactNode; gap?: string }> = 
         onMouseMove={e => { if (!dragging || !ref.current) return; e.preventDefault(); const x = e.pageX - (ref.current.offsetLeft); ref.current.scrollLeft = dragSL.current - (x - dragX.current) * 1.5; check(); }}
         onMouseUp={() => setDragging(false)}
         onMouseLeave={() => setDragging(false)}
-        style={{ display: 'flex', gap, overflowX: 'auto', paddingBottom: '8px', width: '100%', minWidth: 0, cursor: dragging ? 'grabbing' : 'grab', userSelect: dragging ? 'none' : 'auto' }}
+        style={{ display: 'flex', gap, overflowX: 'auto', padding: '14px 8px 12px', width: '100%', minWidth: 0, cursor: dragging ? 'grabbing' : 'grab', userSelect: dragging ? 'none' : 'auto' }}
       >
         {children}
       </div>
@@ -203,6 +203,28 @@ const Section: React.FC<{
 /* ── Static data ── */
 const FAV_IDS = ['GWwnRe0u', 'rjkrTnma', 'm1iXOUID', 'mPTrDSun', '__YIeFT-', 'uP7MlTHz', 'eLm-JvK4', 'SM-rvz75', 'qcVqPqk5', 'vRNpPA7_', 'yBmo2qWU', 'QWLY3Ls_', 'QkFUdVod', 'BH07HVc8', 'kehuVn2F', 'cDHlLKvW', '_KjTxjcC'];
 
+const selectDistinctSongs = (
+  songs: Song[],
+  limit: number,
+  usedIds: Set<string>,
+  usedArtwork: Set<string>,
+  language?: string | string[],
+) => {
+  const languages = language ? new Set(Array.isArray(language) ? language : [language]) : null;
+  const selected: Song[] = [];
+
+  for (const song of songs) {
+    const songLanguage = song.language.trim().toLowerCase();
+    const artwork = song.imageUrl.trim();
+    if ((languages && !languages.has(songLanguage)) || usedIds.has(song.id) || (artwork && usedArtwork.has(artwork))) continue;
+    selected.push(song);
+    usedIds.add(song.id);
+    if (artwork) usedArtwork.add(artwork);
+    if (selected.length === limit) break;
+  }
+  return selected;
+};
+
 const ARTISTS = [
   { name: 'Anirudh', image: 'https://c.saavncdn.com/artists/Anirudh_Ravichander_500x500.jpg', query: 'Anirudh Ravichander' },
   { name: 'Sid Sriram', image: 'https://c.saavncdn.com/artists/Sid_Sriram_500x500.jpg', query: 'Sid Sriram' },
@@ -254,18 +276,30 @@ export const Home: React.FC<{
         const favs = await saavnApi.getSongsByIds(FAV_IDS);
         setFavourites(favs);
         setLoading(false);
+        const year = new Date().getFullYear();
         const [trend, nTamil, nHindi, nTelugu, tamil, telugu, hindi] = await Promise.all([
-          saavnApi.searchSongs('trending hits 2025', 12),
-          saavnApi.searchSongs('new tamil songs 2025', 5),
-          saavnApi.searchSongs('new hindi songs 2025', 5),
-          saavnApi.searchSongs('new telugu songs 2025', 5),
-          saavnApi.searchSongs('tamil hits 2025', 10),
-          saavnApi.searchSongs('telugu hits 2025', 10),
-          saavnApi.searchSongs('hindi hits 2025', 10),
+          saavnApi.searchSongs(`trending songs ${year}`, 24),
+          saavnApi.searchSongs(`new tamil songs ${year}`, 5),
+          saavnApi.searchSongs(`new hindi songs ${year}`, 5),
+          saavnApi.searchSongs(`new telugu songs ${year}`, 5),
+          saavnApi.searchSongs(`tamil hits ${year}`, 24),
+          saavnApi.searchSongs(`telugu hits ${year}`, 24),
+          saavnApi.searchSongs(`hindi hits ${year}`, 24),
         ]);
-        setTrending(trend);
-        setNewReleases([...nTamil, ...nHindi, ...nTelugu].sort(() => Math.random() - 0.5));
-        setTamilHits(tamil); setTeluguHits(telugu); setHindiHits(hindi);
+        const usedIds = new Set<string>();
+        const usedArtwork = new Set<string>();
+        // Keep the broad Trending row separate from the regional rows below it.
+        const trendingSongs = selectDistinctSongs(trend, 12, usedIds, usedArtwork, ['english', 'hindi', 'punjabi']);
+        const tamilSongs = selectDistinctSongs(tamil, 10, usedIds, usedArtwork, 'tamil');
+        const teluguSongs = selectDistinctSongs(telugu, 10, usedIds, usedArtwork, 'telugu');
+        const hindiSongs = selectDistinctSongs(hindi, 10, usedIds, usedArtwork, 'hindi');
+        const releases = selectDistinctSongs([...nTamil, ...nHindi, ...nTelugu], 15, usedIds, usedArtwork);
+
+        setTrending(trendingSongs);
+        setTamilHits(tamilSongs);
+        setTeluguHits(teluguSongs);
+        setHindiHits(hindiSongs);
+        setNewReleases(releases.sort(() => Math.random() - 0.5));
       } catch (e) { console.error(e); setLoading(false); }
     })();
   }, []);

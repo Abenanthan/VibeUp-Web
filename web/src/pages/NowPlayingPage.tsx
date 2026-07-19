@@ -202,10 +202,10 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--accent), var(--magenta), transparent)', zIndex: 3, opacity: 0.7 }} />
 
           {/* Content */}
-          <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', padding: '30px 48px 26px', boxSizing: 'border-box' }}>
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', padding: 'min(30px, 3vh) 48px min(26px, 2.5vh)', boxSizing: 'border-box' }}>
 
             {/* Top bar */}
-            <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexShrink: 0 }}>
+            <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'min(20px, 2.5vh)', flexShrink: 0 }}>
               <HoverScale>
                 <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50%', width: '38px', height: '38px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ChevronDown size={22} />
@@ -241,10 +241,10 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
             <div style={{ display: 'flex', flex: 1, gap: '56px', overflow: 'hidden', alignItems: 'center' }}>
 
               {/* LEFT: art + controls */}
-              <div style={{ width: '42%', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+              <div style={{ width: '42%', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', padding: '4px 0', boxSizing: 'border-box' }}>
 
                 {/* Album art */}
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'min(20px, 2.5vh)', flexShrink: 0 }}>
                   <motion.div
                     layout
                     onClick={cycleMode}
@@ -256,7 +256,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                     title="Tap artwork to switch view"
                     style={{
                       position: 'relative',
-                      width: 'min(280px, 100%)',
+                      width: artMode === 'ambient' ? 'min(290px, 36vh, 100%)' : 'min(340px, 42vh, 100%)',
                       aspectRatio: '1/1',
                       borderRadius: isDisk ? '50%' : '18px',
                       overflow: 'visible',
@@ -279,12 +279,28 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                       )}
                     </AnimatePresence>
 
-                    <motion.div layout style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 'inherit', overflow: 'hidden' }}>
+                    <motion.div
+                      layout
+                      style={{
+                        position: 'relative',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: 'inherit',
+                        overflow: 'hidden',
+                        // Album artwork occasionally has credits right at its edge. Keep an
+                        // inset in non-vinyl modes so those details stay fully visible.
+                        padding: isDisk ? 0 : '12px',
+                        boxSizing: 'border-box',
+                        background: isDisk ? 'transparent' : '#121018',
+                      }}
+                    >
                       <img
                         src={currentSong.imageUrl}
                         alt={currentSong.title}
                         style={{
-                          width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+                          // Preserve the entire cover in square and ambient modes; the vinyl view
+                          // deliberately remains filled so it reads as a record.
+                          width: '100%', height: '100%', objectFit: isDisk ? 'cover' : 'contain', objectPosition: 'center', display: 'block',
                           animation: isDisk ? 'spinVinyl 20s linear infinite' : 'none',
                           animationPlayState: isPlaying ? 'running' : 'paused',
                           borderRadius: 'inherit',
@@ -331,15 +347,14 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                 </div>
 
                 {/* View-mode segmented control */}
-                <Reveal delay={0.1} style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px', flexShrink: 0 }}>
+                <Reveal delay={0.1} style={{ display: 'flex', justifyContent: 'center', marginBottom: 'min(14px, 1.5vh)', flexShrink: 0 }}>
                   <div style={{ display: 'flex', gap: '4px', padding: '4px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '99px' }}>
                     {modeBtns.map((m) => {
                       const active = artMode === m.id;
                       return (
-                        <button key={m.id} onClick={() => pickMode(m.id)} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 13px', borderRadius: '99px', border: 'none', cursor: 'pointer', background: 'none', color: active ? '#fff' : 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font)' }}>
+                        <button key={m.id} onClick={() => pickMode(m.id)} title={m.label} aria-label={`${m.label} artwork mode`} style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 12px', borderRadius: '99px', border: 'none', cursor: 'pointer', background: 'none', color: active ? '#fff' : 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font)' }}>
                           {active && <motion.div layoutId="art-mode-pill" style={{ position: 'absolute', inset: 0, background: 'var(--gradient-main)', borderRadius: '99px', zIndex: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} />}
                           <span style={{ position: 'relative', zIndex: 1, display: 'flex' }}>{m.icon}</span>
-                          <span style={{ position: 'relative', zIndex: 1 }}>{m.label}</span>
                         </button>
                       );
                     })}
@@ -347,13 +362,13 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                 </Reveal>
 
                 {/* Song info */}
-                <Reveal delay={0.15} style={{ marginBottom: '18px', flexShrink: 0, textAlign: 'center' }}>
+                <Reveal delay={0.15} style={{ marginBottom: 'min(14px, 1.5vh)', flexShrink: 0, textAlign: 'center' }}>
                   <h2 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.3px', lineHeight: 1.25, color: '#fff', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSong.title}</h2>
                   <p style={{ fontSize: '13px', color: 'var(--accent-2)', fontWeight: 600 }}>{currentSong.artist}</p>
                 </Reveal>
 
                 {/* Progress bar */}
-                <Reveal delay={0.2} style={{ marginBottom: '18px', flexShrink: 0 }}>
+                <Reveal delay={0.2} style={{ marginBottom: 'min(14px, 1.5vh)', flexShrink: 0 }}>
                   <div style={{ position: 'relative', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '99px', cursor: 'pointer', marginBottom: '8px' }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); seekTo(((e.clientX - r.left) / r.width) * duration); }}>
                     <motion.div style={{ height: '100%', borderRadius: '99px', background: 'var(--gradient-main)', width: `${progress}%` }} layout transition={{ ease: 'linear', duration: 0.1 }} />
                     <motion.div style={{ position: 'absolute', top: '50%', left: `${progress}%`, x: '-50%', y: '-50%', width: '12px', height: '12px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 6px rgba(0,0,0,0.5), 0 0 8px var(--magenta-glow)' }} layout transition={{ ease: 'linear', duration: 0.1 }} />
@@ -365,7 +380,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                 </Reveal>
 
                 {/* Controls */}
-                <Reveal delay={0.25} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexShrink: 0 }}>
+                <Reveal delay={0.25} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'min(18px, 2vh)', flexShrink: 0 }}>
                   {iconBtn(toggleShuffle, isShuffle, <Shuffle size={18} />, 'Shuffle')}
                   <HoverScale scale={1.15} tapScale={0.9}>
                     <button onClick={playPrevious} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.8)' }}><SkipBack size={26} fill="currentColor" /></button>
