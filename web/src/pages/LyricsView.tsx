@@ -70,7 +70,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <AlignLeft size={20} style={{ color: 'var(--amber)' }} />
+            <AlignLeft size={20} style={{ color: 'var(--accent)' }} />
             <div>
               <h3 style={{ fontWeight: 800, fontSize: '18px', color: 'var(--text-primary)' }}>Lyrics</h3>
               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{currentSong.title} — {currentSong.artist}</p>
@@ -100,7 +100,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
         >
           {lyricsLoading && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '48px' }}>
-              <div style={{ border: '4px solid var(--amber)', borderTopColor: 'transparent', width: '32px', height: '32px', borderRadius: '50%', animation: 'spinCw 1s linear infinite' }}></div>
+              <div style={{ border: '4px solid var(--accent)', borderTopColor: 'transparent', width: '32px', height: '32px', borderRadius: '50%', animation: 'spinCw 1s linear infinite' }}></div>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Loading lyrics...</p>
             </div>
           )}
@@ -134,10 +134,10 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
                     initial={false}
                     animate={{
                       fontSize: isActive ? '24px' : '20px',
-                      color: isActive ? 'var(--amber)' : 'var(--text-secondary)',
+                      color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
                       opacity: isActive ? 1 : 0.45,
                       scale: isActive ? 1.05 : 1,
-                      backgroundColor: isActive ? 'var(--amber-dim)' : 'transparent',
+                      backgroundColor: isActive ? 'var(--accent-dim)' : 'transparent',
                     }}
                     style={{
                       lineHeight: '1.6',
@@ -148,7 +148,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
                       padding: '8px 16px',
                       margin: 0,
                     }}
-                    whileHover={{ scale: isActive ? 1.05 : 1.02, color: isActive ? 'var(--amber)' : 'var(--text-primary)', opacity: isActive ? 1 : 0.8 }}
+                    whileHover={{ scale: isActive ? 1.05 : 1.02, color: isActive ? 'var(--accent)' : 'var(--text-primary)', opacity: isActive ? 1 : 0.8 }}
                   >
                     {line.text}
                   </motion.p>

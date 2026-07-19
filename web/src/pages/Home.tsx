@@ -68,8 +68,8 @@ const HorizontalScroll: React.FC<{ children: React.ReactNode; gap?: string }> = 
 
   return (
     <div style={{ position: 'relative', width: '100%', minWidth: 0 }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-      {showL && <button style={navBtn('left')} onClick={() => scroll('left')} onMouseEnter={e => (e.currentTarget.style.background = 'var(--amber)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-elevated)')}><ChevronLeft size={16} /></button>}
-      {showR && <button style={navBtn('right')} onClick={() => scroll('right')} onMouseEnter={e => (e.currentTarget.style.background = 'var(--amber)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-elevated)')}><ChevronRight size={16} /></button>}
+      {showL && <button style={navBtn('left')} onClick={() => scroll('left')} onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-elevated)')}><ChevronLeft size={16} /></button>}
+      {showR && <button style={navBtn('right')} onClick={() => scroll('right')} onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-elevated)')}><ChevronRight size={16} /></button>}
       <div
         ref={ref}
         className="hide-scrollbar"
@@ -90,7 +90,8 @@ const SongCard: React.FC<{
   song: Song; queue: Song[];
   activeMenuId: string | null; setActiveMenuId: (id: string | null) => void;
   handlePlay: (s: Song, q: Song[]) => void;
-}> = ({ song, queue, activeMenuId, setActiveMenuId, handlePlay }) => {
+  onArtistClick?: (id: string | null, name: string) => void;
+}> = ({ song, queue, activeMenuId, setActiveMenuId, handlePlay, onArtistClick }) => {
   const { toggleLike, isLiked, playlists, addSongToPlaylist } = useLibrary();
   const { currentSong, isPlaying } = useAudio();
   const [hov, setHov] = useState(false);
@@ -110,7 +111,7 @@ const SongCard: React.FC<{
           {/* Play overlay */}
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.42)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: hov ? 1 : 0, transition: 'opacity 0.2s' }}>
             <HoverScale scale={1.15} tapScale={0.9}>
-              <button onClick={() => handlePlay(song, queue)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--amber)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--amber-glow)', transform: hov ? 'scale(1)' : 'scale(0.8)', transition: 'transform 0.2s' }}>
+              <button onClick={() => handlePlay(song, queue)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--accent-glow)', transform: hov ? 'scale(1)' : 'scale(0.8)', transition: 'transform 0.2s' }}>
                 {isNowPlaying && isPlaying ? <span style={{ width: '14px', height: '14px', display: 'flex', gap: '2px', alignItems: 'flex-end' }}>
                   {[1,2,3].map(i => <span key={i} className="visualizer-bar" style={{ background: 'var(--bg-base)' }} />)}
                 </span> : <Play size={15} fill="#0d0c0a" color="#0d0c0a" style={{ marginLeft: '2px' }} />}
@@ -133,8 +134,18 @@ const SongCard: React.FC<{
             </div>
           )}
         </MotionCard>
-        <p style={{ fontSize: '12px', fontWeight: 600, color: isNowPlaying ? 'var(--amber)' : 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>{song.title}</p>
-        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.artist}</p>
+        <p style={{ fontSize: '12px', fontWeight: 600, color: isNowPlaying ? 'var(--accent)' : 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>{song.title}</p>
+        <p
+          onClick={(e) => {
+            e.stopPropagation();
+            onArtistClick?.(null, song.artist);
+          }}
+          style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', transition: 'color 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+        >
+          {song.artist}
+        </p>
       </div>
     </StaggerItem>
   );
@@ -145,7 +156,8 @@ const Section: React.FC<{
   title: string; songs: Song[]; viewAll?: () => void;
   activeMenuId: string | null; setActiveMenuId: (id: string | null) => void;
   handlePlay: (s: Song, q: Song[]) => void;
-}> = ({ title, songs, viewAll, activeMenuId, setActiveMenuId, handlePlay }) => {
+  onArtistClick?: (id: string | null, name: string) => void;
+}> = ({ title, songs, viewAll, activeMenuId, setActiveMenuId, handlePlay, onArtistClick }) => {
   if (!songs.length) return null;
   return (
     <FadeInView direction="left" delay={0.1} style={{ marginBottom: '38px', minWidth: 0, width: '100%' }}>
@@ -153,7 +165,7 @@ const Section: React.FC<{
         <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>{title}</h3>
         {viewAll && (
           <HoverScale scale={1.05} tapScale={0.95}>
-            <button onClick={viewAll} style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 500, fontFamily: 'var(--font)', transition: 'color 0.15s' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--amber)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
+            <button onClick={viewAll} style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 500, fontFamily: 'var(--font)', transition: 'color 0.15s' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
               See all <ChevronRight size={13} />
             </button>
           </HoverScale>
@@ -161,7 +173,7 @@ const Section: React.FC<{
       </div>
       <HorizontalScroll gap="14px">
         <StaggerContainer style={{ display: 'flex', gap: '14px' }}>
-          {songs.map(song => <SongCard key={song.id} song={song} queue={songs} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />)}
+          {songs.map(song => <SongCard key={song.id} song={song} queue={songs} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />)}
         </StaggerContainer>
       </HorizontalScroll>
     </FadeInView>
@@ -189,7 +201,10 @@ const MOODS = [
   { label: 'Workout',   query: 'workout gym songs',         bg: 'linear-gradient(135deg, #5a0c3a 0%, #c01e6e 100%)' },
 ];
 
-export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCurrentTab: _setCurrentTab }) => {
+export const Home: React.FC<{
+  setCurrentTab: (tab: string) => void;
+  onArtistClick: (artistId: string | null, artistName: string) => void;
+}> = ({ setCurrentTab: _setCurrentTab, onArtistClick }) => {
   const { playSong, currentSong } = useAudio();
   const { recentlyPlayed, addToRecentlyPlayed } = useLibrary();
 
@@ -239,13 +254,6 @@ export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCu
     } catch (e) { console.error(e); }
   };
 
-  const handleArtist = async (query: string) => {
-    try {
-      const songs = await saavnApi.searchSongs(query, 25);
-      if (songs.length) handlePlay(songs[0], songs);
-    } catch (e) { console.error(e); }
-  };
-
   return (
     <div onClick={() => setActiveMenuId(null)} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '32px 28px 100px', height: '100%', width: '100%', minWidth: 0 }}>
 
@@ -253,13 +261,13 @@ export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCu
       <FadeInView direction="up" delay={0.1} style={{ marginBottom: '36px' }}>
         <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.5px', marginBottom: '5px' }}>{greeting}</p>
         <h2 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.15, color: 'var(--text-primary)' }}>
-          What's your vibe<span style={{ color: 'var(--amber)' }}>?</span>
+          What's your vibe<span style={{ color: 'var(--accent)' }}>?</span>
         </h2>
       </FadeInView>
 
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '280px', flexDirection: 'column', gap: '14px' }}>
-          <div className="animate-spin" style={{ width: '32px', height: '32px', border: '2.5px solid var(--border-medium)', borderTopColor: 'var(--amber)', borderRadius: '50%' }} />
+          <div className="animate-spin" style={{ width: '32px', height: '32px', border: '2.5px solid var(--border-medium)', borderTopColor: 'var(--accent)', borderRadius: '50%' }} />
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Loading music…</p>
         </div>
       ) : (
@@ -274,13 +282,25 @@ export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCu
                   return (
                     <StaggerItem key={song.id}>
                       <HoverScale scale={1.03} tapScale={0.97}>
-                        <button onClick={() => handlePlay(song, recentlyPlayed)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px 7px 7px', background: active ? 'var(--amber-dim)' : 'var(--bg-elevated)', border: `1px solid ${active ? 'var(--amber-glow)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left', transition: 'background 0.15s, border-color 0.15s', fontFamily: 'var(--font)' }} onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-hover)'; }}} onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-elevated)'; }}}>
-                          <img src={song.imageUrl} alt={song.title} style={{ width: '38px', height: '38px', borderRadius: '7px', objectFit: 'cover', flexShrink: 0 }} />
-                          <div style={{ overflow: 'hidden', flex: 1 }}>
-                            <p style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: active ? 'var(--amber)' : 'var(--text-primary)' }}>{song.title}</p>
-                            <p style={{ fontSize: '10px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>{song.artist}</p>
-                          </div>
-                        </button>
+                        <div style={{ position: 'relative', width: '100%' }}>
+                          <button onClick={() => handlePlay(song, recentlyPlayed)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px 7px 7px', background: active ? 'var(--accent-dim)' : 'var(--bg-elevated)', border: `1px solid ${active ? 'var(--accent-glow)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left', transition: 'background 0.15s, border-color 0.15s', fontFamily: 'var(--font)' }} onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-hover)'; }}} onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-elevated)'; }}}>
+                            <img src={song.imageUrl} alt={song.title} style={{ width: '38px', height: '38px', borderRadius: '7px', objectFit: 'cover', flexShrink: 0 }} />
+                            <div style={{ overflow: 'hidden', flex: 1 }}>
+                              <p style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: active ? 'var(--accent)' : 'var(--text-primary)' }}>{song.title}</p>
+                              <p
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onArtistClick?.(null, song.artist);
+                                }}
+                                style={{ fontSize: '10px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px', cursor: 'pointer' }}
+                                onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+                                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+                              >
+                                {song.artist}
+                              </p>
+                            </div>
+                          </button>
+                        </div>
                       </HoverScale>
                     </StaggerItem>
                   );
@@ -305,10 +325,10 @@ export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCu
             </StaggerContainer>
           </FadeInView>
 
-          <Section title="Favourites"   songs={favourites}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
-          <Section title="Trending Now" songs={trending}     activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
-          <Section title="New Releases" songs={newReleases}  activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
-
+          <Section title="Favourites"   songs={favourites}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Trending Now" songs={trending}     activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="New Releases" songs={newReleases}  activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+ 
           {/* Artists */}
           <FadeInView direction="left" delay={0.1} style={{ marginBottom: '38px', minWidth: 0 }}>
             <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', letterSpacing: '-0.2px' }}>Artists</h3>
@@ -316,8 +336,8 @@ export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCu
               <StaggerContainer style={{ display: 'flex', gap: '20px' }}>
                 {ARTISTS.map(art => (
                   <StaggerItem key={art.name}>
-                    <HoverScale scale={1.1} tapScale={0.95} onClick={() => handleArtist(art.query)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '9px', flexShrink: 0, cursor: 'pointer', width: '88px' }}>
-                      <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--border-medium)', transition: 'border-color 0.2s' }} onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--amber)')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-medium)')}>
+                    <HoverScale scale={1.1} tapScale={0.95} onClick={() => onArtistClick(null, art.query)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '9px', flexShrink: 0, cursor: 'pointer', width: '88px' }}>
+                      <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--border-medium)', transition: 'border-color 0.2s' }} onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-medium)')}>
                         <img src={art.image} alt={art.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
                       <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.3 }}>{art.name}</span>
@@ -327,10 +347,10 @@ export const Home: React.FC<{ setCurrentTab: (tab: string) => void }> = ({ setCu
               </StaggerContainer>
             </HorizontalScroll>
           </FadeInView>
-
-          <Section title="Tamil Hits"   songs={tamilHits}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
-          <Section title="Telugu Hits"  songs={teluguHits}  activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
-          <Section title="Hindi Hits"   songs={hindiHits}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} />
+ 
+          <Section title="Tamil Hits"   songs={tamilHits}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Telugu Hits"  songs={teluguHits}  activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Hindi Hits"   songs={hindiHits}   activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
         </>
       )}
     </div>

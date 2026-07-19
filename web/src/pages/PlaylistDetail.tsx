@@ -11,7 +11,8 @@ const fmtDur = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.floor(sec
 export const PlaylistDetail: React.FC<{
   playlistId: string;
   onBack: () => void;
-}> = ({ playlistId, onBack }) => {
+  onArtistClick?: (id: string | null, name: string) => void;
+}> = ({ playlistId, onBack, onArtistClick }) => {
   const { playlists, likedSongs, toggleLike, isLiked, removeSongFromPlaylist, removePlaylist, reorderPlaylist, addSongToPlaylist, addToRecentlyPlayed } = useLibrary();
   const { playSong, currentSong, isPlaying, togglePlayPause } = useAudio();
 
@@ -111,7 +112,7 @@ export const PlaylistDetail: React.FC<{
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
             <HoverScale scale={1.05} tapScale={0.95}>
-              <button onClick={handlePlayAll} style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--amber)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px var(--amber-glow)', opacity: playlist.songs.length === 0 ? 0.5 : 1 }}>
+              <button onClick={handlePlayAll} style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px var(--accent-glow)', opacity: playlist.songs.length === 0 ? 0.5 : 1 }}>
                 {isPlayingThis ? <Pause size={24} fill="#0d0c0a" color="#0d0c0a" /> : <Play size={24} fill="#0d0c0a" color="#0d0c0a" style={{ marginLeft: '3px' }} />}
               </button>
             </HoverScale>
@@ -152,10 +153,22 @@ export const PlaylistDetail: React.FC<{
                             <img src={song.imageUrl} alt={song.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                             <div>
                               <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{song.title}</p>
-                              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{song.artist}</p>
+                              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                <span
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onArtistClick?.(null, song.artist);
+                                  }}
+                                  style={{ cursor: 'pointer', transition: 'color 0.15s' }}
+                                  onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+                                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+                                >
+                                  {song.artist}
+                                </span>
+                              </p>
                             </div>
                           </div>
-                          <button onClick={() => { if (!inPl) addSongToPlaylist(playlist.id, song); }} disabled={inPl} style={{ background: inPl ? 'transparent' : 'var(--amber)', border: inPl ? '1px solid var(--border-medium)' : 'none', borderRadius: '99px', padding: '5px 12px', color: inPl ? 'var(--text-tertiary)' : '#0d0c0a', fontSize: '11px', fontWeight: 600, cursor: inPl ? 'default' : 'pointer', fontFamily: 'var(--font)' }}>
+                          <button onClick={() => { if (!inPl) addSongToPlaylist(playlist.id, song); }} disabled={inPl} className="neon-btn" style={{ padding: '5px 12px', fontSize: '11px', fontFamily: 'var(--font)', opacity: inPl ? 0.5 : 1, cursor: inPl ? 'default' : 'pointer' }}>
                             {inPl ? 'Added' : 'Add'}
                           </button>
                         </div>
@@ -196,20 +209,32 @@ export const PlaylistDetail: React.FC<{
                     <div style={{ width: '32px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {active && isPlaying ? (
                         <span style={{ width: '12px', height: '12px', display: 'flex', gap: '2px', alignItems: 'flex-end', justifyContent: 'center' }}>
-                          {[1,2,3].map(i => <span key={i} className="visualizer-bar" style={{ background: 'var(--amber)' }} />)}
+                          {[1,2,3].map(i => <span key={i} className="visualizer-bar" style={{ background: 'var(--accent)' }} />)}
                         </span>
                       ) : isHov ? (
-                        <Play size={14} color="var(--amber)" fill="var(--amber)" />
+                        <Play size={14} color="var(--accent)" fill="var(--accent)" />
                       ) : (
-                        <span style={{ fontSize: '12px', color: active ? 'var(--amber)' : 'var(--text-tertiary)', fontWeight: 600 }}>{idx + 1}</span>
+                        <span style={{ fontSize: '12px', color: active ? 'var(--accent)' : 'var(--text-tertiary)', fontWeight: 600 }}>{idx + 1}</span>
                       )}
                     </div>
 
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, paddingRight: '16px' }}>
                       <img src={song.imageUrl} alt={song.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                       <div style={{ overflow: 'hidden' }}>
-                        <p style={{ fontSize: '13px', fontWeight: 600, color: active ? 'var(--amber)' : 'var(--text-primary)', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</p>
-                        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.artist}</p>
+                        <p style={{ fontSize: '13px', fontWeight: 600, color: active ? 'var(--accent)' : 'var(--text-primary)', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</p>
+                        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onArtistClick?.(null, song.artist);
+                            }}
+                            style={{ cursor: 'pointer', transition: 'color 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+                          >
+                            {song.artist}
+                          </span>
+                        </p>
                       </div>
                     </div>
 

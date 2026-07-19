@@ -63,7 +63,7 @@ export const Library: React.FC<{
           <HoverScale scale={1.03} tapScale={0.97}>
             <div onClick={() => setShowCreate(true)} style={{ height: '210px', background: 'transparent', borderRadius: 'var(--radius-lg)', padding: '24px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border-medium)', transition: 'background 0.2s, border-color 0.2s, transform 0.2s', gap: '12px' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(168, 85, 247, 0.05)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-medium)'; e.currentTarget.style.background = 'transparent'; }}>
               <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border)' }}>
-                <Plus size={24} color="var(--amber)" />
+                <Plus size={24} color="var(--accent)" />
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)' }}>Create Playlist</h3>
             </div>
@@ -77,7 +77,7 @@ export const Library: React.FC<{
           return (
             <StaggerItem key={pl.id}>
               <HoverScale scale={1.03} tapScale={0.97}>
-                <div onClick={() => { setActivePlaylistId(pl.id); setCurrentTab('playlist_detail'); }} style={{ height: '210px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-lg)', padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', transition: 'border-color 0.2s, background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--amber-dim)'; e.currentTarget.style.background = 'var(--bg-hover)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-elevated)'; }}>
+                <div onClick={() => { setActivePlaylistId(pl.id); setCurrentTab('playlist_detail'); }} style={{ height: '210px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-lg)', padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', transition: 'border-color 0.2s, background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-glow)'; e.currentTarget.style.background = 'var(--bg-hover)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-elevated)'; }}>
                   <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: 'var(--radius-md)', background: art ? 'transparent' : 'var(--bg-surface)', marginBottom: '14px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', position: 'relative' }}>
                     {art ? <img src={art} alt={pl.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <ListMusic size={32} color="var(--border-medium)" />}
                   </div>
@@ -123,7 +123,7 @@ export const Library: React.FC<{
               onChange={e => setNewPlName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setShowCreate(false); }}
               style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font)', outline: 'none', marginBottom: '24px', transition: 'border-color 0.2s', boxSizing: 'border-box' }}
-              onFocus={e => e.currentTarget.style.borderColor = 'var(--amber)'}
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'}
               onBlur={e => e.currentTarget.style.borderColor = 'var(--border-medium)'}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -131,7 +131,7 @@ export const Library: React.FC<{
                 <button onClick={() => setShowCreate(false)} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '9px 18px', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Cancel</button>
               </HoverScale>
               <HoverScale scale={1.05} tapScale={0.95}>
-                <button onClick={handleCreate} disabled={!newPlName.trim()} style={{ background: 'var(--amber)', border: 'none', borderRadius: 'var(--radius-md)', padding: '9px 18px', color: '#0d0c0a', fontSize: '13px', fontWeight: 700, cursor: newPlName.trim() ? 'pointer' : 'not-allowed', fontFamily: 'var(--font)', opacity: newPlName.trim() ? 1 : 0.5 }}>Create</button>
+                <button onClick={handleCreate} disabled={!newPlName.trim()} className="neon-btn" style={{ padding: '9px 18px', fontSize: '13px', fontFamily: 'var(--font)', opacity: newPlName.trim() ? 1 : 0.5 }}>Create</button>
               </HoverScale>
             </div>
           </div>

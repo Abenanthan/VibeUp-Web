@@ -8,8 +8,10 @@ import { Home } from './pages/Home';
 import { Search } from './pages/Search';
 import { Library } from './pages/Library';
 import { PlaylistDetail } from './pages/PlaylistDetail';
+import { ArtistDetail } from './pages/ArtistDetail';
 import { SplashScreen } from './components/SplashScreen';
 import { Landing } from './pages/Landing';
+import UserCursor from './components/UserCursor';
 import { useAudio } from './context/AudioContext';
 import { Play, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion, HoverScale, SlidePanel } from './components/motion';
@@ -19,6 +21,16 @@ export default function App() {
   const [showLanding, setShowLanding] = useState(true);
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
+  const [selectedArtistName, setSelectedArtistName] = useState<string | null>(null);
+  const [prevTab, setPrevTab] = useState<string>('home');
+
+  const handleArtistClick = useCallback((id: string | null, name: string) => {
+    setPrevTab(currentTab === 'artist_detail' ? prevTab : currentTab);
+    setSelectedArtistId(id);
+    setSelectedArtistName(name);
+    setCurrentTab('artist_detail');
+  }, [currentTab, prevTab]);
 
   useEffect(() => {
     // Remove any stale theme class — the new design uses the root tokens directly
@@ -44,9 +56,9 @@ export default function App() {
   const renderContent = () => {
     switch (currentTab) {
       case 'home':
-        return <Home setCurrentTab={setCurrentTab} />;
+        return <Home setCurrentTab={setCurrentTab} onArtistClick={handleArtistClick} />;
       case 'search':
-        return <Search />;
+        return <Search onArtistClick={handleArtistClick} />;
       case 'library':
         return (
           <Library
@@ -59,10 +71,19 @@ export default function App() {
           <PlaylistDetail
             playlistId={selectedPlaylistId!}
             onBack={() => setCurrentTab('library')}
+            onArtistClick={handleArtistClick}
+          />
+        );
+      case 'artist_detail':
+        return (
+          <ArtistDetail
+            artistId={selectedArtistId || undefined}
+            artistName={selectedArtistName || undefined}
+            onBack={() => setCurrentTab(prevTab)}
           />
         );
       default:
-        return <Home setCurrentTab={setCurrentTab} />;
+        return <Home setCurrentTab={setCurrentTab} onArtistClick={handleArtistClick} />;
     }
   };
 
@@ -215,6 +236,7 @@ export default function App() {
           onClose={() => setShowNowPlaying(false)}
           onOpenQueue={() => setShowQueue(!showQueue)}
           onOpenEq={() => setShowEq(true)}
+          onArtistClick={handleArtistClick}
         />
 
         {/* ── Synced Lyrics Drawer ── */}
@@ -236,6 +258,14 @@ export default function App() {
             />
           )}
         </AnimatePresence>
+
+        {/* Custom neon spring cursor */}
+        {!showSplash && (
+          <UserCursor
+            name={currentSong ? `Playing: ${currentSong.title}` : 'VibeUp'}
+            showLabel={!!currentSong}
+          />
+        )}
       </div>
     </>
   );

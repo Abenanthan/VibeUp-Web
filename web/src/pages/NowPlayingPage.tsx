@@ -19,6 +19,7 @@ interface NowPlayingPageProps {
   onClose: () => void;
   onOpenQueue: () => void;
   onOpenEq: () => void;
+  onArtistClick?: (artistId: string | null, artistName: string) => void;
 }
 
 type ArtMode = 'vinyl' | 'cover' | 'ambient';
@@ -39,7 +40,7 @@ const Reveal: React.FC<{ children: React.ReactNode; delay?: number; y?: number; 
     </motion.div>
   );
 
-export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose, onOpenQueue, onOpenEq }) => {
+export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose, onOpenQueue, onOpenEq, onArtistClick }) => {
   const {
     currentSong, isPlaying, currentTime, duration, volume,
     isShuffle, repeatMode, isResolvingUrl,
@@ -58,6 +59,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
   const [isHovered, setIsHovered] = useState(false);
 
   const [artistSongs, setArtistSongs] = useState<Song[]>([]);
+  const [artistImage, setArtistImage] = useState<string | null>(null);
   const [artistLoading, setArtistLoading] = useState(false);
   const artistFetchedFor = useRef<string>('');
 
@@ -101,7 +103,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
 
   useEffect(() => { if (!isOpen) setShowPlaylist(false); }, [isOpen]);
 
-  // Fetch "more from artist" when the Artist tab opens for a new artist
+  // Fetch "more from artist" and artist profile image when the Artist tab opens for a new artist
   useEffect(() => {
     if (!isOpen || rightTab !== 'artist' || !currentSong) return;
     const key = currentSong.artist;
@@ -109,13 +111,27 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
     artistFetchedFor.current = key;
     setArtistLoading(true);
     setArtistSongs([]);
+    setArtistImage(null);
     const primary = key.split(',')[0].trim();
-    saavnApi.searchSongs(primary, 16)
-      .then((songs) => {
-        setArtistSongs(songs.filter((s) => s.id !== currentSong.id).slice(0, 12));
-      })
-      .catch(() => setArtistSongs([]))
-      .finally(() => setArtistLoading(false));
+    
+    Promise.all([
+      saavnApi.searchArtists(primary).then(results => {
+        if (results && results.length > 0) {
+          const match = results.find(a => a.name.toLowerCase() === primary.toLowerCase()) || results[0];
+          return match.imageUrl;
+        }
+        return null;
+      }).catch(() => null),
+      saavnApi.searchSongs(primary, 16).catch(() => [])
+    ]).then(([imgUrl, songs]) => {
+      setArtistImage(imgUrl);
+      setArtistSongs(songs.filter((s) => s.id !== currentSong.id).slice(0, 12));
+    }).catch(() => {
+      setArtistImage(null);
+      setArtistSongs([]);
+    }).finally(() => {
+      setArtistLoading(false);
+    });
   }, [isOpen, rightTab, currentSong]);
 
   // Reset artist cache when the song's artist changes
@@ -244,8 +260,8 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                       aspectRatio: '1/1',
                       borderRadius: isDisk ? '50%' : '18px',
                       overflow: 'visible',
-                      rotateX: artMode === 'cover' ? springRotateX : 0,
-                      rotateY: artMode === 'cover' ? springRotateY : 0,
+                      rotateX: springRotateX,
+                      rotateY: springRotateY,
                       scale: isHovered ? 1.03 : (isPlaying ? 1 : 0.96),
                       perspective: '1000px',
                       transformStyle: 'preserve-3d',
@@ -476,11 +492,21 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                       <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '26px' }}>
                         <div style={{ position: 'relative', width: '92px', height: '92px', flexShrink: 0 }}>
                           <div style={{ position: 'absolute', inset: '-3px', borderRadius: '50%', background: 'var(--gradient-main)', filter: 'blur(2px)', opacity: 0.8 }} />
-                          <img src={currentSong.imageUrl} alt={primaryArtist} style={{ position: 'relative', width: '92px', height: '92px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }} />
+                          <img src={artistImage || currentSong.imageUrl} alt={primaryArtist} style={{ position: 'relative', width: '92px', height: '92px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }} />
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--magenta)', marginBottom: '5px' }}>Artist</p>
-                          <h2 style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '-0.6px', color: '#fff', lineHeight: 1.1, marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{primaryArtist}</h2>
+                          <h2
+                            onClick={() => {
+                              onClose();
+                              onArtistClick?.(null, primaryArtist);
+                            }}
+                            style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '-0.6px', color: '#fff', lineHeight: 1.1, marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', transition: 'color 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+                            onMouseLeave={e => e.currentTarget.style.color = '#fff'}
+                          >
+                            {primaryArtist}
+                          </h2>
                           <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }}>
                             {currentSong.language && <span style={{ fontSize: '10px', fontWeight: 600, padding: '3px 10px', borderRadius: '99px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{currentSong.language}</span>}
                             {currentSong.album && currentSong.album !== 'Unknown Album' && <span style={{ fontSize: '10px', fontWeight: 600, padding: '3px 10px', borderRadius: '99px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>{currentSong.album}</span>}

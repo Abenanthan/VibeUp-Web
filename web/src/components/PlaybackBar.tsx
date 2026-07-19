@@ -53,7 +53,7 @@ export const PlaybackBar: React.FC<{
     <HoverScale scale={1.15} tapScale={0.9}>
       <button
         onClick={onClick} title={title} disabled={disabled}
-        style={{ background: 'none', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', color: active ? 'var(--amber)' : 'rgba(255,255,255,0.5)', opacity: disabled ? 0.3 : 1, transition: 'color 0.2s', display: 'flex', alignItems: 'center' }}
+        style={{ background: 'none', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', color: active ? 'var(--accent)' : 'rgba(255,255,255,0.5)', opacity: disabled ? 0.3 : 1, transition: 'color 0.2s', display: 'flex', alignItems: 'center' }}
         onMouseEnter={e => { if (!disabled && !active) e.currentTarget.style.color = '#fff'; }}
         onMouseLeave={e => { if (!disabled && !active) e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
       >
@@ -74,7 +74,7 @@ export const PlaybackBar: React.FC<{
         >
           {/* Progress bar at top edge */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'rgba(255,255,255,0.05)', cursor: 'pointer', zIndex: 2 }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); seekTo(((e.clientX - r.left) / r.width) * duration); }}>
-            <motion.div style={{ height: '100%', background: 'var(--amber)', width: `${progress}%`, transition: 'width 0.1s linear' }} />
+            <motion.div style={{ height: '100%', background: 'var(--accent)', width: `${progress}%`, transition: 'width 0.1s linear' }} />
           </div>
 
           {/* LEFT: Song Info */}
@@ -121,7 +121,7 @@ export const PlaybackBar: React.FC<{
               </HoverScale>
 
               <HoverScale scale={1.1} tapScale={0.95}>
-                <button onClick={togglePlayPause} disabled={isResolvingUrl} style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--amber)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--amber-glow)', opacity: isResolvingUrl ? 0.6 : 1 }}>
+                <button onClick={togglePlayPause} disabled={isResolvingUrl} style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--accent-glow)', opacity: isResolvingUrl ? 0.6 : 1 }}>
                   <AnimatePresence mode="wait">
                     {isResolvingUrl ? (
                       <motion.div key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="animate-spin" style={{ width: '16px', height: '16px', border: '2px solid rgba(13,12,10,0.3)', borderTopColor: '#0d0c0a', borderRadius: '50%' }} />
@@ -142,7 +142,7 @@ export const PlaybackBar: React.FC<{
                 {iconBtn(toggleRepeatMode, repeatMode !== 'none', <Repeat size={18} />, 'Repeat')}
                 <AnimatePresence>
                   {repeatMode === 'song' && (
-                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ position: 'absolute', top: '-2px', right: '-2px', background: 'var(--amber)', color: '#0d0c0a', fontSize: '7px', fontWeight: 800, borderRadius: '50%', width: '10px', height: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</motion.span>
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ position: 'absolute', top: '-2px', right: '-2px', background: 'var(--accent)', color: '#0d0c0a', fontSize: '7px', fontWeight: 800, borderRadius: '50%', width: '10px', height: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</motion.span>
                   )}
                 </AnimatePresence>
               </div>
@@ -180,7 +180,7 @@ export const PlaybackBar: React.FC<{
                 </button>
               </HoverScale>
               {activeQueue.length > 0 && (
-                <span style={{ position: 'absolute', top: '-5px', right: '-6px', background: 'var(--amber)', color: '#0d0c0a', fontSize: '8px', borderRadius: '10px', padding: '1px 4px', fontWeight: 800 }}>{activeQueue.length}</span>
+                <span style={{ position: 'absolute', top: '-5px', right: '-6px', background: 'var(--accent)', color: '#0d0c0a', fontSize: '8px', borderRadius: '10px', padding: '1px 4px', fontWeight: 800 }}>{activeQueue.length}</span>
               )}
             </div>
 

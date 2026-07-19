@@ -20,7 +20,9 @@ const CATEGORIES = [
   { label: 'Punjabi',  query: 'punjabi hits 2025',      bg: 'linear-gradient(135deg,#2a1a5e,#6d3fd6)' },
 ];
 
-export const Search: React.FC = () => {
+export const Search: React.FC<{
+  onArtistClick?: (id: string | null, name: string) => void;
+}> = ({ onArtistClick }) => {
   const { playSong, currentSong, isPlaying } = useAudio();
   const { toggleLike, isLiked, playlists, addSongToPlaylist, addToRecentlyPlayed } = useLibrary();
 
@@ -104,13 +106,13 @@ export const Search: React.FC = () => {
 
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '180px', flexDirection: 'column', gap: '12px' }}>
-          <div className="animate-spin" style={{ width: '28px', height: '28px', border: '2px solid var(--border-medium)', borderTopColor: 'var(--amber)', borderRadius: '50%' }} />
+          <div className="animate-spin" style={{ width: '28px', height: '28px', border: '2px solid var(--border-medium)', borderTopColor: 'var(--accent)', borderRadius: '50%' }} />
           <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Searching…</p>
         </div>
       ) : results.length > 0 ? (
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}><span style={{ color: 'var(--amber)', fontWeight: 600 }}>{results.length}</span> results for "{query}"</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}><span style={{ color: 'var(--accent)', fontWeight: 600 }}>{results.length}</span> results for "{query}"</p>
             <button onClick={() => { setResults([]); setQuery(''); inputRef.current?.focus(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font)' }}><X size={12} /> Clear</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -123,18 +125,31 @@ export const Search: React.FC = () => {
                   <div style={{ width: '26px', textAlign: 'center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {currentSong?.id === song.id && isPlaying ? (
                       <span style={{ width: '12px', height: '12px', display: 'flex', gap: '2px', alignItems: 'flex-end', justifyContent: 'center' }}>
-                        {[1,2,3].map(i => <span key={i} className="visualizer-bar" style={{ background: 'var(--amber)' }} />)}
+                        {[1,2,3].map(i => <span key={i} className="visualizer-bar" style={{ background: 'var(--accent)' }} />)}
                       </span>
                     ) : isHov ? (
-                      <Play size={13} color="var(--amber)" fill="var(--amber)" />
+                      <Play size={13} color="var(--accent)" fill="var(--accent)" />
                     ) : (
-                      <span style={{ fontSize: '12px', color: currentSong?.id === song.id ? 'var(--amber)' : 'var(--text-tertiary)', fontWeight: 600 }}>{idx + 1}</span>
+                      <span style={{ fontSize: '12px', color: currentSong?.id === song.id ? 'var(--accent)' : 'var(--text-tertiary)', fontWeight: 600 }}>{idx + 1}</span>
                     )}
                   </div>
                   <img src={song.imageUrl} alt={song.title} style={{ width: '42px', height: '42px', borderRadius: '7px', objectFit: 'cover', flexShrink: 0 }} />
                   <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
                     <p style={{ fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>{song.title}</p>
-                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>{song.artist}{song.album ? ` · ${song.album}` : ''}</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onArtistClick?.(null, song.artist);
+                        }}
+                        style={{ cursor: 'pointer', transition: 'color 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+                      >
+                        {song.artist}
+                      </span>
+                      {song.album ? ` · ${song.album}` : ''}
+                    </p>
                   </div>
                   <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 500, flexShrink: 0 }}>{fmtDur(song.duration)}</span>
                   <button onClick={e => { e.stopPropagation(); toggleLike(song); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: liked ? 'var(--danger)' : 'var(--text-secondary)', opacity: isHov || liked ? 1 : 0, transition: 'opacity 0.15s', display: 'flex', flexShrink: 0 }}><Heart size={14} fill={liked ? 'var(--danger)' : 'none'} /></button>
@@ -163,7 +178,7 @@ export const Search: React.FC = () => {
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
                 {history.map((h, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '6px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '99px', cursor: 'pointer', transition: 'border-color 0.15s' }} onClick={() => doSearch(h)} onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--amber)')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '6px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '99px', cursor: 'pointer', transition: 'border-color 0.15s' }} onClick={() => doSearch(h)} onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
                     <Clock size={11} color="var(--text-tertiary)" />
                     <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 400 }}>{h}</span>
                     <button onClick={e => { e.stopPropagation(); const u = history.filter(x => x !== h); setHistory(u); localStorage.setItem('vibeup_search_history', JSON.stringify(u)); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', padding: 0 }}><X size={10} /></button>
@@ -174,7 +189,7 @@ export const Search: React.FC = () => {
           )}
           <section>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <Mic2 size={16} color="var(--amber)" strokeWidth={1.8} />
+              <Mic2 size={16} color="var(--accent)" strokeWidth={1.8} />
               <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Browse</h3>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '10px' }}>

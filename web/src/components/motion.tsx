@@ -359,7 +359,7 @@ interface ParticleBurstProps {
 
 export const ParticleBurst: React.FC<ParticleBurstProps> = ({
   count = 12,
-  color = 'var(--amber)',
+  color = 'var(--accent)',
   size = 6,
 }) => (
   <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 }}>

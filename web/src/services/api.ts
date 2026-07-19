@@ -282,6 +282,64 @@ export const saavnApi = {
     }
   },
 
+  searchArtists: async (query: string): Promise<{ id: string; name: string; imageUrl: string }[]> => {
+    if (!query || !query.trim()) return [];
+    try {
+      const json = await safeFetch(`${WORKER_BASE}api/search/artists?query=${encodeURIComponent(query)}`) as any;
+      if (json?.success && Array.isArray(json.data?.results)) {
+        return json.data.results.map((a: any) => {
+          const img = Array.isArray(a.image) && a.image.length > 0
+            ? a.image[a.image.length - 1].url
+            : typeof a.image === 'string'
+            ? a.image
+            : '';
+          return {
+            id: a.id || '',
+            name: a.name || '',
+            imageUrl: img || '',
+          };
+        });
+      }
+      return [];
+    } catch (e) {
+      console.error('searchArtists error:', e);
+      return [];
+    }
+  },
+
+  getArtistDetails: async (artistId: string): Promise<{ id: string; name: string; imageUrl: string; songs: Song[] } | null> => {
+    if (!artistId) return null;
+    try {
+      const json = await safeFetch(`${WORKER_BASE}api/artists?id=${artistId}`) as any;
+      if (json?.success && json.data) {
+        const a = json.data;
+        const img = Array.isArray(a.image) && a.image.length > 0
+          ? a.image[a.image.length - 1].url
+          : typeof a.image === 'string'
+          ? a.image
+          : '';
+        const rawSongs = Array.isArray(a.topSongs)
+          ? a.topSongs
+          : Array.isArray(a.songs)
+          ? a.songs
+          : Array.isArray(a.songs?.results)
+          ? a.songs.results
+          : [];
+        const songs = rawSongs.map(mapWorkerDto).filter((s: any) => s && s.id);
+        return {
+          id: a.id || artistId,
+          name: a.name || '',
+          imageUrl: img || '',
+          songs,
+        };
+      }
+      return null;
+    } catch (e) {
+      console.error('getArtistDetails error:', e);
+      return null;
+    }
+  },
+
   getSongById: async (id: string): Promise<Song | null> => {
     const json = await safeFetch(`${WORKER_BASE}api/songs?ids=${id}`) as {
       success?: boolean; data?: unknown[];
