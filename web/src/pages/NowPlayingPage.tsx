@@ -369,10 +369,15 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
 
                 {/* Progress bar */}
                 <Reveal delay={0.2} style={{ marginBottom: 'min(14px, 1.5vh)', flexShrink: 0 }}>
-                  <div style={{ position: 'relative', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '99px', cursor: 'pointer', marginBottom: '8px' }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); seekTo(((e.clientX - r.left) / r.width) * duration); }}>
-                    <motion.div style={{ height: '100%', borderRadius: '99px', background: 'var(--gradient-main)', width: `${progress}%` }} layout transition={{ ease: 'linear', duration: 0.1 }} />
-                    <motion.div style={{ position: 'absolute', top: '50%', left: `${progress}%`, x: '-50%', y: '-50%', width: '12px', height: '12px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 6px rgba(0,0,0,0.5), 0 0 8px var(--magenta-glow)' }} layout transition={{ ease: 'linear', duration: 0.1 }} />
-                  </div>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max={duration || 100} 
+                    step="0.1"
+                    value={currentTime} 
+                    onChange={e => seekTo(parseFloat(e.target.value))} 
+                    style={{ width: '100%', cursor: 'pointer', marginBottom: '8px', '--range-progress': `${progress}%` } as React.CSSProperties} 
+                  />
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{fmt(currentTime)}</span>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{fmt(duration)}</span>

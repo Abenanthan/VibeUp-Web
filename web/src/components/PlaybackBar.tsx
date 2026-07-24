@@ -150,9 +150,15 @@ export const PlaybackBar: React.FC<{
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
               <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '35px', textAlign: 'right', fontWeight: 500 }}>{fmt(currentTime)}</span>
-              <div style={{ flex: 1, position: 'relative', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '99px', cursor: 'pointer' }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); seekTo(((e.clientX - r.left) / r.width) * duration); }}>
-                <motion.div style={{ height: '100%', borderRadius: '99px', background: 'var(--text-secondary)', width: `${progress}%` }} layout transition={{ ease: 'linear', duration: 0.1 }} />
-              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max={duration || 100} 
+                step="0.1"
+                value={currentTime} 
+                onChange={e => seekTo(parseFloat(e.target.value))} 
+                style={{ flex: 1, cursor: 'pointer', '--range-progress': `${progress}%` } as React.CSSProperties} 
+              />
               <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '35px', fontWeight: 500 }}>{fmt(duration)}</span>
             </div>
           </div>
