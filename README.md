@@ -1,6 +1,6 @@
 # VibeUp 
 
-VibeUp is a modern, high-performance Web Based music player built with React and Media3 (ExoPlayer). It offers a seamless listening experience with a focus on deep audio customization, dynamic lyrics, and multilingual support.
+VibeUp is a modern, high-performance Web Based music player built with React and Media3. It offers a seamless listening experience with a focus on deep audio customization, dynamic lyrics, and multilingual support.
 
 ## Features
 
