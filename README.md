@@ -39,19 +39,6 @@ VibeUp is a modern, high-performance Web Based music player built with React and
 - `com.vibeup.android.domain`: Domain models and repository interfaces.
 - `com.vibeup.android.ui.theme`: App styling, colors (Purple/Blue primary palette), and Typography.
 
-## Getting Started
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Abenanthan/VibeUp-Music_Streaming_App
-   ```
-2. **Open in Android Studio**:
-   - Ensure you have the latest version of Android Studio (Hedgehog or newer).
-3. **Build and Run**:
-   - The app requires Android 7.0 (API 24) or higher.
-   - For notification controls on Android 13+, ensure you grant the notification permission on the first launch.
-   - If you want to use translated lyrics or online lyric lookup, ensure the app has network permission and an optional lyrics provider API key configured in the app settings.
-
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
