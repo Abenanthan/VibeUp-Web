@@ -1,44 +1,57 @@
-# VibeUp 
+# VibeUp
 
-VibeUp is a modern, high-performance Web Based music player built with React and Media3. It offers a seamless listening experience with a focus on deep audio customization, dynamic lyrics, and multilingual support.
+🚀 **[Live Demo: VibeUp Web Player](https://vibe-up-web.vercel.app/)**
 
-## Features
+VibeUp is a modern, high-performance web-based music streaming application built with React. It offers a seamless listening experience with a focus on deep audio customization, rich animations, and an intuitive user interface.
 
-- **Modern UI/UX**: Fully built with React following Material 3 guidelines.
-- **Advanced Playback Engine**: Powered by Android Media3 (ExoPlayer) for stable and high-quality audio streaming and local playback.
-- **Audio Effects Engine**:
-  - 5-Band Equalizer with curated presets (Rock, Pop, Jazz, etc.).
-  - Bass Boost and Virtualizer (Surround Sound).
-  - Loudness Enhancer and Reverb presets.
-  - Utilize Device's own Audio Effects.
-- **Dynamic Lyrics**: Supports both synced (LRC) and plain text lyrics with tap-to-seek functionality.
-- **Multilingual Lyrics (Native Languages)**: Display lyrics in the user's native language when available. Features include:
-  - Support for multiple language tracks per song (original and translations).
-  - Automatic language detection based on device locale with the option to manually switch languages.
-- **Local Music Integration**: Scan and play music directly from your device storage.
-- **Playlist Management**: Create, edit, and organize your music library into custom playlists.
-- **Background Playback**: Persistent playback with modern MediaStyle notifications and seamless integration with Android's media controls.
-- **Mini Player**: Always accessible playback controls while browsing the app.
-- **Efficient Search Algorithm**: Uses JioSaavn's official API's to process search queries with song recommendations using popularity.
-- 
-## Tech Stack
+## 🎵 Features
 
-- **Language**: [Kotlin](https://kotlinlang.org/)
-- **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose)
-- **Navigation**: [Compose Navigation](https://developer.android.com/jetpack/compose/navigation)
-- **Dependency Injection**: [Hilt](https://developer.android.com/training/dependency-injection/hilt-android)
-- **Audio Engine**: [Android Media3 / ExoPlayer](https://developer.android.com/guide/topics/media/media3)
-- **Image Loading**: [Coil](https://coil-kt.github.io/coil/)
-- **Local Database**: [Room](https://developer.android.com/training/data-storage/room)
-- **Concurrency**: Kotlin Coroutines & Flow
+- **Modern UI/UX**: Fully built with React, featuring a sleek, responsive design that looks great on desktop and mobile.
+- **Fluid Animations**: Uses `framer-motion` to provide a dynamic, smooth, and interactive feel across the application.
+- **Advanced Playback Engine**: Robust HTML5 audio streaming with seamless media controls.
+- **Efficient Search Algorithm**: Utilizes robust APIs to process search queries, providing high-quality song recommendations based on popularity and relevance.
+- **Mini Player**: Persistent playback with mini-player controls that stay accessible while browsing the app.
+- **Curated Discoverability**: Easy access to top charts, new releases, and curated playlists.
 
-## Project Structure
+## 🛠️ Tech Stack
 
-- `com.vibeup.android.presentation`: UI layers including Screens, ViewModels, and Compose Components.
-- `com.vibeup.android.service`: Core background services including `MusicPlayerService`, `PlayerManager`, `AudioEffectsManager`, and `LyricsManager` (handles fetching, caching, syncing, and language selection for lyrics).
-- `com.vibeup.android.domain`: Domain models and repository interfaces.
-- `com.vibeup.android.ui.theme`: App styling, colors (Purple/Blue primary palette), and Typography.
+- **Framework**: [React 19](https://react.dev/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Deployment**: [Vercel](https://vercel.com/)
 
-## License
+## 🚀 Getting Started
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+
+### Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Abenanthan/VibeUp.git
+   ```
+
+2. **Navigate into the web directory**:
+   ```bash
+   cd VibeUp/web
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+4. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
+
+5. **Open in Browser**:
+   Navigate to `http://localhost:5173` to view the app in action.
+
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
