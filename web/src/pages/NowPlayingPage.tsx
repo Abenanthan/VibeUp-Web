@@ -394,11 +394,17 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                     <button onClick={togglePlayPause} disabled={isResolvingUrl} style={{ width: '58px', height: '58px', borderRadius: '50%', background: 'var(--gradient-main)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 26px var(--accent-glow)', opacity: isResolvingUrl ? 0.6 : 1 }}>
                       <AnimatePresence mode="wait">
                         {isResolvingUrl ? (
-                          <motion.div key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="animate-spin" style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%' }} />
+                          <motion.div key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                            <div className="animate-spin" style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%' }} />
+                          </motion.div>
                         ) : isPlaying ? (
-                          <motion.div key="pause" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><Pause size={24} fill="#fff" color="#fff" /></motion.div>
+                          <motion.div key="pause" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                            <Pause size={24} fill="#fff" color="#fff" />
+                          </motion.div>
                         ) : (
-                          <motion.div key="play" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><Play size={24} fill="#fff" color="#fff" style={{ marginLeft: '2px' }} /></motion.div>
+                          <motion.div key="play" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                            <Play size={24} fill="#fff" color="#fff" style={{ transform: 'translateX(2px)' }} />
+                          </motion.div>
                         )}
                       </AnimatePresence>
                     </button>
