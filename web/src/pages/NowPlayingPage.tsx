@@ -202,7 +202,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--accent), var(--magenta), transparent)', zIndex: 3, opacity: 0.7 }} />
 
           {/* Content */}
-          <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', padding: 'min(30px, 3vh) 48px min(26px, 2.5vh)', boxSizing: 'border-box' }}>
+          <div className="nowplaying-content" style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', padding: 'min(30px, 3vh) 48px min(26px, 2.5vh)' }}>
 
             {/* Top bar */}
             <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'min(20px, 2.5vh)', flexShrink: 0 }}>
@@ -238,10 +238,10 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
             </AnimatePresence>
 
             {/* Two-column layout */}
-            <div style={{ display: 'flex', flex: 1, gap: '56px', overflow: 'hidden', alignItems: 'center' }}>
+            <div className="nowplaying-two-col">
 
               {/* LEFT: art + controls */}
-              <div style={{ width: '42%', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', padding: '4px 0', boxSizing: 'border-box' }}>
+              <div className="nowplaying-left">
 
                 {/* Album art */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'min(20px, 2.5vh)', flexShrink: 0 }}>
@@ -448,7 +448,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
               </div>
 
               {/* RIGHT: Lyrics / Artist tabs */}
-              <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }} style={{ flex: 1, height: '92%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }} className="nowplaying-right">
 
                 {/* Tab switcher */}
                 <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexShrink: 0 }}>

@@ -70,7 +70,7 @@ export const Search: React.FC<{
   const handlePlay = (song: Song) => { addToRecentlyPlayed(song); playSong(song, results); };
 
   return (
-    <div onClick={() => { setActiveMenu(null); setShowSug(false); }} style={{ flex: 1, overflowY: 'auto', padding: '32px 28px 100px', height: '100%', color: 'var(--text-primary)' }}>
+    <div onClick={() => { setActiveMenu(null); setShowSug(false); }} className="page-content" style={{ color: 'var(--text-primary)' }}>
 
       <header style={{ marginBottom: '28px' }}>
         <h2 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.4px', color: 'var(--text-primary)', marginBottom: '3px' }}>Search</h2>
@@ -192,7 +192,7 @@ export const Search: React.FC<{
               <Mic2 size={16} color="var(--accent)" strokeWidth={1.8} />
               <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Browse</h3>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '10px' }}>
+            <div className="search-categories" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '10px' }}>
               {CATEGORIES.map(cat => (
                 <button key={cat.label} onClick={() => doSearch(cat.query)} style={{ height: '92px', background: cat.bg, border: 'none', borderRadius: 'var(--radius-lg)', cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: '14px 16px', textAlign: 'left', transition: 'transform 0.2s, filter 0.2s', position: 'relative', overflow: 'hidden', fontFamily: 'var(--font)' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.filter = 'brightness(1.12)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'brightness(1)'; }}>
                   <span style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.2px' }}>{cat.label}</span>

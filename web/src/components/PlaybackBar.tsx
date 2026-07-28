@@ -70,17 +70,18 @@ export const PlaybackBar: React.FC<{
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          style={{ height: '96px', background: 'rgba(10,9,10,0.85)', backdropFilter: 'blur(30px)', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', zIndex: 100, position: 'relative' }}
+          style={{ height: '72px', background: 'rgba(10,9,10,0.85)', backdropFilter: 'blur(30px)', borderTop: '1px solid rgba(255,255,255,0.06)', zIndex: 100, position: 'relative' }}
         >
           {/* Progress bar at top edge */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'rgba(255,255,255,0.05)', cursor: 'pointer', zIndex: 2 }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); seekTo(((e.clientX - r.left) / r.width) * duration); }}>
             <motion.div style={{ height: '100%', background: 'var(--accent)', width: `${progress}%`, transition: 'width 0.1s linear' }} />
           </div>
 
+          <div className="playback-bar-inner" style={{ height: '100%' }}>
           {/* LEFT: Song Info */}
-          <div style={{ width: '30%', minWidth: '220px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="playback-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <HoverScale scale={1.05} tapScale={0.95}>
-              <div onClick={onOpenNowPlaying} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', flexShrink: 0 }}>
+              <div onClick={onOpenNowPlaying} style={{ position: 'relative', width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', flexShrink: 0 }}>
                 <AnimatePresence mode="popLayout">
                   <motion.img
                     key={currentSong.imageUrl}
@@ -111,8 +112,9 @@ export const PlaybackBar: React.FC<{
             </HoverScale>
           </div>
 
+
           {/* CENTER: Player Controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1, maxWidth: '40%' }}>
+          <div className="playback-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
               {iconBtn(toggleShuffle, isShuffle, <Shuffle size={18} />, 'Shuffle')}
               
@@ -169,10 +171,37 @@ export const PlaybackBar: React.FC<{
             </div>
           </div>
 
-          {/* RIGHT: Extra Controls */}
-          <div style={{ width: '30%', minWidth: '220px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '18px' }}>
-            
-            <div style={{ position: 'relative' }} onMouseEnter={() => setEqHover(true)} onMouseLeave={() => setEqHover(false)}>
+          {/* RIGHT: Mobile play controls + desktop extras */}
+          <div className="playback-right" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '14px' }}>
+            {/* Mobile-only: prev/play/next */}
+            <div className="pb-show-mobile" style={{ display: 'none', alignItems: 'center', gap: '10px' }}>
+              <HoverScale scale={1.1} tapScale={0.9}>
+                <button onClick={playPrevious} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', padding: '4px', display: 'flex' }}><SkipBack size={20} fill="currentColor" /></button>
+              </HoverScale>
+              <HoverScale scale={1.1} tapScale={0.95}>
+                <button onClick={togglePlayPause} disabled={isResolvingUrl} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--accent-glow)', opacity: isResolvingUrl ? 0.6 : 1, flexShrink: 0 }}>
+                  <AnimatePresence mode="wait">
+                    {isResolvingUrl ? (
+                      <motion.div key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="animate-spin" style={{ width: '14px', height: '14px', border: '2px solid rgba(13,12,10,0.3)', borderTopColor: '#0d0c0a', borderRadius: '50%' }} />
+                      </motion.div>
+                    ) : isPlaying ? (
+                      <motion.div key="pause" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                        <Pause size={17} fill="#0d0c0a" color="#0d0c0a" />
+                      </motion.div>
+                    ) : (
+                      <motion.div key="play" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                        <Play size={17} fill="#0d0c0a" color="#0d0c0a" style={{ transform: 'translateX(2px)' }} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </button>
+              </HoverScale>
+              <HoverScale scale={1.1} tapScale={0.9}>
+                <button onClick={playNext} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', padding: '4px', display: 'flex' }}><SkipForward size={20} fill="currentColor" /></button>
+              </HoverScale>
+            </div>
+            <div className="pb-hide-mobile" style={{ position: 'relative' }} onMouseEnter={() => setEqHover(true)} onMouseLeave={() => setEqHover(false)}>
               <HoverScale scale={1.15} tapScale={0.9}>
                 <button onClick={onOpenEq} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}>
                   <Sliders size={18} />
@@ -185,7 +214,7 @@ export const PlaybackBar: React.FC<{
               </AnimatePresence>
             </div>
             
-            <div style={{ position: 'relative' }}>
+            <div className="pb-hide-mobile" style={{ position: 'relative' }}>
               <HoverScale scale={1.15} tapScale={0.9}>
                 <button onClick={onOpenQueue} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}>
                   <ListMusic size={18} />
@@ -196,13 +225,14 @@ export const PlaybackBar: React.FC<{
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100px' }}>
+            <div className="pb-hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100px' }}>
               <button onClick={handleMute} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}>
                 {volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
               <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(parseFloat(e.target.value))} style={{ width: '100%', '--range-progress': `${volume * 100}%` } as React.CSSProperties} />
             </div>
-          </div>
+          </div>{/* /playback-right */}
+          </div>{/* /playback-bar-inner */}
         </motion.div>
       )}
     </AnimatePresence>

@@ -708,3 +708,292 @@ input[type="range"]::-moz-range-thumb {
     animation: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════
+   Mobile Responsive — VibeUp
+   ≤ 768 px : phone layout
+   769–1024 px : tablet (sidebar collapses)
+═══════════════════════════════════════════ */
+
+/* ─── App Shell ─── */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.app-panel {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* ─── Sidebar (desktop) ─── */
+.sidebar-desktop {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* ─── Bottom Navigation Bar (mobile) ─── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 110;
+  background: rgba(10, 9, 15, 0.92);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(168, 85, 247, 0.12);
+  padding: 8px 0 max(env(safe-area-inset-bottom, 0px), 6px);
+}
+
+.bottom-nav-inner {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.bottom-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  min-width: 60px;
+}
+
+.bottom-nav-btn.active {
+  color: var(--accent);
+}
+
+.bottom-nav-btn span.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.bottom-nav-btn.active span.nav-icon {
+  background: var(--accent-dim);
+}
+
+/* ─── Playback Bar ─── */
+.playback-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+/* Mobile mini-player: song info + play/skip only */
+.playback-left   { min-width: 220px; width: 30%; }
+.playback-center { max-width: 40%; }
+.playback-right  { min-width: 220px; width: 30%; }
+
+/* ─── Now Playing Page ─── */
+.nowplaying-two-col {
+  display: flex;
+  flex: 1;
+  gap: 56px;
+  overflow: hidden;
+  align-items: center;
+}
+
+.nowplaying-left {
+  width: 42%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 4px 0;
+  box-sizing: border-box;
+}
+
+.nowplaying-right {
+  flex: 1;
+  height: 92%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Page content ─── */
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 32px 28px 100px;
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ─────────────────────────────────────────
+   TABLET  769 – 1024 px
+───────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .sidebar-desktop {
+    width: 220px !important;
+  }
+}
+
+/* ─────────────────────────────────────────
+   MOBILE  ≤ 768 px
+───────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Hide desktop sidebar */
+  .sidebar-desktop {
+    display: none !important;
+  }
+
+  /* Show bottom nav */
+  .bottom-nav {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Page content — add space for playback bar + bottom nav */
+  .page-content {
+    padding: 20px 16px 180px;
+  }
+
+  /* ── Playback bar — compact mini-player ── */
+  .playback-bar-inner {
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .playback-left {
+    width: auto;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .playback-center {
+    display: none !important;
+  }
+
+  .playback-right {
+    width: auto;
+    min-width: 0;
+    display: flex !important;
+  }
+
+  /* Hide volume, eq, queue on tiny screens; keep play/next */
+  .pb-hide-mobile {
+    display: none !important;
+  }
+
+  /* Show mobile-only play controls */
+  .pb-show-mobile {
+    display: flex !important;
+  }
+
+  /* Compact playback bar */
+  .playback-bar-inner {
+    height: 68px;
+  }
+
+  /* ── Now Playing — single column ── */
+  .nowplaying-two-col {
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+    align-items: stretch;
+    padding: 0 0 80px;
+  }
+
+  .nowplaying-left {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .nowplaying-right {
+    height: auto;
+    flex: 1;
+    min-height: 280px;
+  }
+
+  /* Now playing outer padding */
+  .nowplaying-content {
+    padding: 16px 20px 0 !important;
+  }
+
+  /* Album art smaller on phone */
+  .nowplaying-art-wrap {
+    width: min(200px, 55vw) !important;
+  }
+
+  /* ── Home — greeting ── */
+  .home-greeting h2 {
+    font-size: 22px !important;
+  }
+
+  /* ── Search categories grid ── */
+  .search-categories {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* ── Playlist / Artist hero banners ── */
+  .playlist-hero-info {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+  }
+
+  .playlist-hero-info > * {
+    /* Shrink the artwork on mobile */
+    width: min(140px, 38vw) !important;
+    height: min(140px, 38vw) !important;
+  }
+
+  .playlist-hero-info h1 {
+    font-size: 32px !important;
+    letter-spacing: -1px !important;
+  }
+}
+
+/* ─────────────────────────────────────────
+   EXTRA SMALL  ≤ 400 px
+───────────────────────────────────────── */
+@media (max-width: 400px) {
+  .page-content {
+    padding: 16px 12px 180px;
+  }
+
+  .playback-bar-inner {
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .nowplaying-content {
+    padding: 12px 14px 0 !important;
+  }
+
+  .bottom-nav-btn {
+    padding: 6px 10px;
+    min-width: 48px;
+  }
+}

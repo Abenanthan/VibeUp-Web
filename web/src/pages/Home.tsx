@@ -317,10 +317,10 @@ export const Home: React.FC<{
   };
 
   return (
-    <div onClick={() => setActiveMenuId(null)} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '32px 28px 100px', height: '100%', width: '100%', minWidth: 0 }}>
+    <div onClick={() => setActiveMenuId(null)} className="page-content">
 
       {/* ── Header ── */}
-      <FadeInView direction="up" delay={0.1} style={{ marginBottom: '36px' }}>
+      <FadeInView direction="up" delay={0.1} style={{ marginBottom: '36px' }} className="home-greeting">
         <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.5px', marginBottom: '5px' }}>{greeting}</p>
         <h2 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.15, color: 'var(--text-primary)' }}>
           What's your vibe<span style={{ color: 'var(--accent)' }}>?</span>

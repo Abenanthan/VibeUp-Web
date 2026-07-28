@@ -27,7 +27,7 @@ export const Library: React.FC<{
   };
 
   return (
-    <div onClick={() => setActiveMenu(null)} style={{ flex: 1, overflowY: 'auto', padding: '32px 28px 100px', height: '100%', color: 'var(--text-primary)' }}>
+    <div onClick={() => setActiveMenu(null)} className="page-content" style={{ color: 'var(--text-primary)' }}>
 
       <FadeInView direction="up" delay={0.1} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
         <div>

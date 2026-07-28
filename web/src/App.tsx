@@ -13,7 +13,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { Landing } from './pages/Landing';
 import UserCursor from './components/UserCursor';
 import { useAudio } from './context/AudioContext';
-import { Play, Trash2, X } from 'lucide-react';
+import { Play, Trash2, X, Home as HomeIcon, Search as SearchIcon, Library as LibraryIcon } from 'lucide-react';
 import { AnimatePresence, motion, HoverScale, SlidePanel } from './components/motion';
 
 export default function App() {
@@ -87,6 +87,12 @@ export default function App() {
     }
   };
 
+  const NAV_TABS = [
+    { id: 'home',    icon: HomeIcon,    label: 'Home' },
+    { id: 'search',  icon: SearchIcon,  label: 'Search' },
+    { id: 'library', icon: LibraryIcon, label: 'Library' },
+  ];
+
   return (
     <>
       {/* Splash Screen — self-manages its fade-out, then unmounts (no
@@ -96,21 +102,19 @@ export default function App() {
       {/* Landing Page — same self-managed exit pattern */}
       {!showSplash && showLanding && <Landing onEnter={handleEnterApp} />}
 
-      {/* Main App — always rendered & visible; the splash and landing sit on
-          top (higher z-index) and fade THEMSELVES out to reveal it, so the app
-          can never be stuck invisible behind a failed reveal animation. */}
-      <div
-        style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}
-      >
+      {/* Main App */}
+      <div className="app-shell">
 
         {/* ── Main Panel Grid Layout ── */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', height: '100%' }}>
-          {/* Left Sidebar */}
-          <Sidebar
-            currentTab={currentTab}
-            setCurrentTab={setCurrentTab}
-            setActivePlaylistId={setSelectedPlaylistId}
-          />
+        <div className="app-panel">
+          {/* Left Sidebar — hidden on mobile */}
+          <div className="sidebar-desktop" style={{ width: '260px', height: '100%', flexShrink: 0 }}>
+            <Sidebar
+              currentTab={currentTab}
+              setCurrentTab={setCurrentTab}
+              setActivePlaylistId={setSelectedPlaylistId}
+            />
+          </div>
 
           {/* Center Screen */}
           <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'var(--bg-base)', minWidth: 0, position: 'relative' }}>
@@ -258,6 +262,33 @@ export default function App() {
             />
           )}
         </AnimatePresence>
+
+        {/* ── Mobile Bottom Navigation Bar ── */}
+        <nav className="bottom-nav" id="mobile-bottom-nav">
+          <div className="bottom-nav-inner">
+            {NAV_TABS.map(tab => {
+              const Icon = tab.icon;
+              const active = currentTab === tab.id ||
+                (tab.id === 'library' && (currentTab === 'playlist_detail'));
+              return (
+                <button
+                  key={tab.id}
+                  id={`mobile-nav-${tab.id}`}
+                  className={`bottom-nav-btn${active ? ' active' : ''}`}
+                  onClick={() => {
+                    setCurrentTab(tab.id);
+                    if (tab.id !== 'playlist_detail') setSelectedPlaylistId(null);
+                  }}
+                >
+                  <span className="nav-icon">
+                    <Icon size={20} />
+                  </span>
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
 
         {/* Custom neon spring cursor */}
         {!showSplash && (

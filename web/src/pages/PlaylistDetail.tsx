@@ -90,7 +90,7 @@ export const PlaylistDetail: React.FC<{
             </button>
           </HoverScale>
 
-          <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-end' }}>
+          <div className="playlist-hero-info" style={{ display: 'flex', gap: '32px', alignItems: 'flex-end' }}>
             <FadeInView direction="up" delay={0.1} style={{ width: '210px', height: '210px', flexShrink: 0, borderRadius: 'var(--radius-lg)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)', overflow: 'hidden', background: isLikedView ? 'linear-gradient(135deg, #4f2178 0%, #2e104f 100%)' : 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {isLikedView ? <Heart size={80} fill="#fff" /> : art ? <img src={art} alt={playlist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '48px' }}>🎵</span>}
             </FadeInView>
