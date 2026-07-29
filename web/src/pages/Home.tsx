@@ -201,7 +201,8 @@ const Section: React.FC<{
 };
 
 /* ── Static data ── */
-const FAV_IDS = ['GWwnRe0u', 'rjkrTnma', 'm1iXOUID', 'mPTrDSun', '__YIeFT-', 'uP7MlTHz', 'eLm-JvK4', 'SM-rvz75', 'qcVqPqk5', 'vRNpPA7_', 'yBmo2qWU', 'QWLY3Ls_', 'QkFUdVod', 'BH07HVc8', 'kehuVn2F', 'cDHlLKvW', '_KjTxjcC'];
+const HOME_CACHE_KEY = 'vibeup_home_v1';
+const FAV_IDS =['GWwnRe0u', 'rjkrTnma', 'm1iXOUID', 'mPTrDSun', '__YIeFT-', 'uP7MlTHz', 'eLm-JvK4', 'SM-rvz75', 'qcVqPqk5', 'vRNpPA7_', 'yBmo2qWU', 'QWLY3Ls_', 'QkFUdVod', 'BH07HVc8', 'kehuVn2F', 'cDHlLKvW', '_KjTxjcC'];
 
 const selectDistinctSongs = (
   songs: Song[],
@@ -271,13 +272,31 @@ export const Home: React.FC<{
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   useEffect(() => {
+    let cancelled = false;
+
+    // ── 1) Instant paint from this session's cache (stale-while-revalidate) ──
+    try {
+      const raw = sessionStorage.getItem(HOME_CACHE_KEY);
+      if (raw) {
+        const c = JSON.parse(raw) as Partial<Record<string, Song[]>>;
+        if (c.favourites?.length) {
+          setFavourites(c.favourites);
+          setTrending(c.trending ?? []);
+          setNewReleases(c.newReleases ?? []);
+          setTamilHits(c.tamilHits ?? []);
+          setTeluguHits(c.teluguHits ?? []);
+          setHindiHits(c.hindiHits ?? []);
+          setLoading(false);
+        }
+      }
+    } catch { /* ignore malformed cache */ }
+
+    // ── 2) Revalidate in the background — all requests fire in parallel ──
     (async () => {
       try {
-        const favs = await saavnApi.getSongsByIds(FAV_IDS);
-        setFavourites(favs);
-        setLoading(false);
         const year = new Date().getFullYear();
-        const [trend, nTamil, nHindi, nTelugu, tamil, telugu, hindi] = await Promise.all([
+        const favsP = saavnApi.getSongsByIds(FAV_IDS);
+        const restP = Promise.all([
           saavnApi.searchSongs(`trending songs ${year}`, 24),
           saavnApi.searchSongs(`new tamil songs ${year}`, 5),
           saavnApi.searchSongs(`new hindi songs ${year}`, 5),
@@ -286,6 +305,15 @@ export const Home: React.FC<{
           saavnApi.searchSongs(`telugu hits ${year}`, 24),
           saavnApi.searchSongs(`hindi hits ${year}`, 24),
         ]);
+
+        // Clear the spinner the moment favourites land — don't wait on the rows.
+        favsP.then((favs) => {
+          if (!cancelled && favs.length) { setFavourites(favs); setLoading(false); }
+        }).catch(() => {});
+
+        const [favs, [trend, nTamil, nHindi, nTelugu, tamil, telugu, hindi]] = await Promise.all([favsP, restP]);
+        if (cancelled) return;
+
         const usedIds = new Set<string>();
         const usedArtwork = new Set<string>();
         // Keep the broad Trending row separate from the regional rows below it.
@@ -293,15 +321,28 @@ export const Home: React.FC<{
         const tamilSongs = selectDistinctSongs(tamil, 10, usedIds, usedArtwork, 'tamil');
         const teluguSongs = selectDistinctSongs(telugu, 10, usedIds, usedArtwork, 'telugu');
         const hindiSongs = selectDistinctSongs(hindi, 10, usedIds, usedArtwork, 'hindi');
-        const releases = selectDistinctSongs([...nTamil, ...nHindi, ...nTelugu], 15, usedIds, usedArtwork);
+        const newReleases = selectDistinctSongs([...nTamil, ...nHindi, ...nTelugu], 15, usedIds, usedArtwork).sort(() => Math.random() - 0.5);
 
         setTrending(trendingSongs);
         setTamilHits(tamilSongs);
         setTeluguHits(teluguSongs);
         setHindiHits(hindiSongs);
-        setNewReleases(releases.sort(() => Math.random() - 0.5));
-      } catch (e) { console.error(e); setLoading(false); }
+        setNewReleases(newReleases);
+        setLoading(false);
+
+        // Cache for instant paint next time the Home tab mounts this session.
+        if (favs.length) {
+          try {
+            sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify({
+              favourites: favs, trending: trendingSongs, tamilHits: tamilSongs,
+              teluguHits: teluguSongs, hindiHits: hindiSongs, newReleases,
+            }));
+          } catch { /* quota — ignore */ }
+        }
+      } catch (e) { console.error(e); if (!cancelled) setLoading(false); }
     })();
+
+    return () => { cancelled = true; };
   }, []);
 
   const handlePlay = useCallback((song: Song, queue: Song[]) => {

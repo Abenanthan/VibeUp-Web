@@ -12,6 +12,7 @@ import { ArtistDetail } from './pages/ArtistDetail';
 import { SplashScreen } from './components/SplashScreen';
 import { Landing } from './pages/Landing';
 import UserCursor from './components/UserCursor';
+import Snowfall from './components/Snowfall';
 import { useAudio } from './context/AudioContext';
 import { Play, Trash2, X, Home as HomeIcon, Search as SearchIcon, Library as LibraryIcon } from 'lucide-react';
 import { AnimatePresence, motion, HoverScale, SlidePanel } from './components/motion';
@@ -118,6 +119,12 @@ export default function App() {
 
           {/* Center Screen */}
           <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'var(--bg-base)', minWidth: 0, position: 'relative' }}>
+            {/* Ambient snowfall backdrop — home only, behind content */}
+            {currentTab === 'home' && (
+              <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+                <Snowfall />
+              </div>
+            )}
             {/* Main content transitions */}
             <AnimatePresence mode="wait">
               <motion.div
@@ -126,7 +133,7 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}
               >
                 {renderContent()}
               </motion.div>
