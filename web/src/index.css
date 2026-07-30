@@ -1085,6 +1085,10 @@ input[type="range"]::-moz-range-thumb {
   }
 
   /* ── Playback bar — compact mini-player ── */
+  .playback-bar-container {
+    margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
   .playback-bar-inner {
     padding: 0 12px;
     gap: 10px;
@@ -1138,9 +1142,9 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .nowplaying-right {
-    height: auto;
-    flex: 1;
-    min-height: 280px;
+    height: 60vh;
+    min-height: 350px;
+    flex: none;
   }
 
   /* Now playing outer padding */
