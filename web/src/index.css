@@ -1209,3 +1209,131 @@ input[type="range"]::-moz-range-thumb {
     min-width: 48px;
   }
 }
+
+/* ═══════════════════════════════════════════
+   TURNTABLE TONEARM — overlaid on spinning disc
+═══════════════════════════════════════════ */
+
+/* The whole tonearm assembly, pivots from top-center */
+.tt-needle {
+  position: absolute;
+  top: -2%;
+  right: -8%;
+  width: 28px;
+  height: 58%;
+  z-index: 20;
+  cursor: grab;
+  transform-origin: top center;
+  transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tt-needle:active {
+  cursor: grabbing;
+}
+
+/* Needle ON the record */
+.tt-needle-on {
+  transform: rotate(22deg);
+}
+
+/* Needle OFF (resting away) */
+.tt-needle-off {
+  transform: rotate(-18deg);
+}
+
+/* Subtle glow on hover */
+.tt-needle:hover .tt-needle-arm {
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.35));
+}
+
+/* ── Pivot base (metallic mount) ── */
+.tt-needle-base {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 35%, #666 0%, #3a3a3a 50%, #222 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  z-index: 3;
+}
+
+/* Small dot in pivot center */
+.tt-needle-base::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transform: translate(-50%, -50%);
+}
+
+/* ── Arm shaft ── */
+.tt-needle-arm {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3.5px;
+  height: calc(100% - 14px);
+  background:
+    linear-gradient(180deg, #999 0%, #777 30%, #666 70%, #555 100%);
+  border-radius: 2px;
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.08),
+    -1px 0 0 rgba(0, 0, 0, 0.4);
+  transition: filter 0.3s;
+}
+
+/* ── Headshell (bottom of arm) ── */
+.tt-needle-head {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-10deg);
+  width: 16px;
+  height: 9px;
+  background:
+    linear-gradient(180deg, #888 0%, #666 100%);
+  border-radius: 2px 2px 1px 1px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+/* Stylus tip (tiny needle point) */
+.tt-needle-tip {
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 6px;
+  background: linear-gradient(180deg, #999, #ddd);
+  border-radius: 0 0 1px 1px;
+}
+
+/* ── Counterweight (near top of arm) ── */
+.tt-needle-weight {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 40%, #777 0%, #444 50%, #2a2a2a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
