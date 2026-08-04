@@ -88,19 +88,6 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
     }
   }, [isPlaying, artMode]);
 
-  // Toggle needle: attach = play, detach = pause
-  const toggleNeedle = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (needleAttached) {
-      // Detach needle → pause
-      setNeedleAttached(false);
-      if (isPlaying) togglePlayPause();
-    } else {
-      // Attach needle → play
-      setNeedleAttached(true);
-      if (!isPlaying) togglePlayPause();
-    }
-  }, [needleAttached, isPlaying, togglePlayPause]);
   const isDisk = artMode === 'vinyl';
 
   const handleMute = () => { if (volume > 0) { setPrevVol(volume); setVolume(0); } else setVolume(prevVol || 0.8); };
@@ -322,19 +309,22 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                         onMouseDown={(e) => {
                           e.preventDefault();
                           const arm = e.currentTarget;
-                          const rect = arm.parentElement!.getBoundingClientRect();
-                          // Pivot point is top-right of the disc area
-                          const pivotX = rect.right - rect.width * 0.06;
-                          const pivotY = rect.top + rect.height * 0.04;
+                          const base = arm.querySelector('.tt-needle-base');
+                          if (!base) return;
+                          const baseRect = base.getBoundingClientRect();
+                          const pivotX = baseRect.left + baseRect.width / 2;
+                          const pivotY = baseRect.top + baseRect.height / 2;
 
                           const onMove = (ev: MouseEvent) => {
                             const dx = ev.clientX - pivotX;
                             const dy = ev.clientY - pivotY;
-                            let angle = Math.atan2(dx, dy) * (180 / Math.PI);
-                            // Clamp between rest (-18°) and on-record (28°)
-                            angle = Math.max(-18, Math.min(28, angle));
+                            let a = Math.atan2(dx, dy) * (180 / Math.PI);
+                            
+                            // Let's invert so that 0 is straight down (which is the default orientation of the arm)
+                            // dx=0, dy>0 => a=0
+                            a = Math.max(-20, Math.min(45, a));
                             arm.style.transition = 'none';
-                            arm.style.transform = `rotate(${angle}deg)`;
+                            arm.style.transform = `rotate(${a}deg)`;
                           };
 
                           const onUp = (ev: MouseEvent) => {
@@ -342,11 +332,11 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                             document.removeEventListener('mouseup', onUp);
                             const dx = ev.clientX - pivotX;
                             const dy = ev.clientY - pivotY;
-                            const angle = Math.atan2(dx, dy) * (180 / Math.PI);
+                            const a = Math.atan2(dx, dy) * (180 / Math.PI);
                             arm.style.transition = '';
                             arm.style.transform = '';
-                            // Snap: if dragged past midpoint (5°), attach; otherwise detach
-                            if (angle > 5) {
+                            
+                            if (a > 10) {
                               if (!needleAttached) {
                                 setNeedleAttached(true);
                                 if (!isPlaying) togglePlayPause();
@@ -364,18 +354,20 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                         }}
                         onTouchStart={(e) => {
                           const arm = e.currentTarget;
-                          const rect = arm.parentElement!.getBoundingClientRect();
-                          const pivotX = rect.right - rect.width * 0.06;
-                          const pivotY = rect.top + rect.height * 0.04;
+                          const base = arm.querySelector('.tt-needle-base');
+                          if (!base) return;
+                          const baseRect = base.getBoundingClientRect();
+                          const pivotX = baseRect.left + baseRect.width / 2;
+                          const pivotY = baseRect.top + baseRect.height / 2;
 
                           const onMove = (ev: TouchEvent) => {
                             const t = ev.touches[0];
                             const dx = t.clientX - pivotX;
                             const dy = t.clientY - pivotY;
-                            let angle = Math.atan2(dx, dy) * (180 / Math.PI);
-                            angle = Math.max(-18, Math.min(28, angle));
+                            let a = Math.atan2(dx, dy) * (180 / Math.PI);
+                            a = Math.max(-20, Math.min(45, a));
                             arm.style.transition = 'none';
-                            arm.style.transform = `rotate(${angle}deg)`;
+                            arm.style.transform = `rotate(${a}deg)`;
                           };
 
                           const onEnd = (ev: TouchEvent) => {
@@ -384,10 +376,11 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                             const t = ev.changedTouches[0];
                             const dx = t.clientX - pivotX;
                             const dy = t.clientY - pivotY;
-                            const angle = Math.atan2(dx, dy) * (180 / Math.PI);
+                            const a = Math.atan2(dx, dy) * (180 / Math.PI);
                             arm.style.transition = '';
                             arm.style.transform = '';
-                            if (angle > 5) {
+                            
+                            if (a > 10) {
                               if (!needleAttached) {
                                 setNeedleAttached(true);
                                 if (!isPlaying) togglePlayPause();
@@ -406,12 +399,12 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                         title={needleAttached ? 'Drag needle off to pause' : 'Drag needle on to play'}
                       >
                         <div className="tt-needle-base" />
+                        <div className="tt-needle-weight" />
                         <div className="tt-needle-arm">
                           <div className="tt-needle-head">
                             <div className="tt-needle-tip" />
                           </div>
                         </div>
-                        <div className="tt-needle-weight" />
                       </div>
                     </div>
                   ) : (

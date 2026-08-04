@@ -1214,17 +1214,18 @@ input[type="range"]::-moz-range-thumb {
    TURNTABLE TONEARM — overlaid on spinning disc
 ═══════════════════════════════════════════ */
 
-/* The whole tonearm assembly, pivots from top-center */
+/* The whole tonearm assembly */
 .tt-needle {
   position: absolute;
-  top: -2%;
-  right: -8%;
-  width: 28px;
-  height: 58%;
+  top: -6%;
+  right: -2%;
+  width: 24px;
+  height: 65%;
   z-index: 20;
   cursor: grab;
-  transform-origin: top center;
-  transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* pivot point should be exactly the center of the base */
+  transform-origin: 12px 12px;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -1235,105 +1236,89 @@ input[type="range"]::-moz-range-thumb {
 
 /* Needle ON the record */
 .tt-needle-on {
-  transform: rotate(22deg);
+  transform: rotate(35deg);
 }
 
 /* Needle OFF (resting away) */
 .tt-needle-off {
-  transform: rotate(-18deg);
-}
-
-/* Subtle glow on hover */
-.tt-needle:hover .tt-needle-arm {
-  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.35));
+  transform: rotate(-10deg);
 }
 
 /* ── Pivot base (metallic mount) ── */
 .tt-needle-base {
   position: absolute;
-  top: -5px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0;
+  left: 0;
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 35%, #666 0%, #3a3a3a 50%, #222 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow:
-    0 3px 10px rgba(0, 0, 0, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: radial-gradient(circle at 30% 30%, #e5e7eb, #9ca3af 40%, #4b5563 80%, #1f2937);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255,255,255,0.5);
   z-index: 3;
 }
 
-/* Small dot in pivot center */
+/* Center pivot pin */
 .tt-needle-base::after {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #111;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: radial-gradient(circle at 30% 30%, #fff, #9ca3af);
   transform: translate(-50%, -50%);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 /* ── Arm shaft ── */
 .tt-needle-arm {
   position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 3.5px;
-  height: calc(100% - 14px);
-  background:
-    linear-gradient(180deg, #999 0%, #777 30%, #666 70%, #555 100%);
+  top: 12px;
+  left: 10px;
+  width: 4px;
+  height: calc(100% - 12px);
+  background: linear-gradient(90deg, #d1d5db 0%, #f3f4f6 20%, #9ca3af 50%, #4b5563 100%);
   border-radius: 2px;
-  box-shadow:
-    1px 0 0 rgba(255, 255, 255, 0.08),
-    -1px 0 0 rgba(0, 0, 0, 0.4);
-  transition: filter 0.3s;
+  box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* ── Headshell (bottom of arm) ── */
+/* ── Headshell ── */
 .tt-needle-head {
   position: absolute;
-  bottom: -4px;
+  bottom: 0;
   left: 50%;
-  transform: translateX(-50%) rotate(-10deg);
-  width: 16px;
-  height: 9px;
-  background:
-    linear-gradient(180deg, #888 0%, #666 100%);
-  border-radius: 2px 2px 1px 1px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+  transform: translateX(-50%) rotate(25deg);
+  transform-origin: top center;
+  width: 14px;
+  height: 28px;
+  background: linear-gradient(145deg, #374151, #111827);
+  border-radius: 4px 4px 2px 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
-/* Stylus tip (tiny needle point) */
+/* Stylus tip */
 .tt-needle-tip {
   position: absolute;
-  bottom: -7px;
+  bottom: -4px;
   left: 50%;
   transform: translateX(-50%);
   width: 2px;
   height: 6px;
-  background: linear-gradient(180deg, #999, #ddd);
-  border-radius: 0 0 1px 1px;
+  background: #fbbf24; /* gold tip */
+  border-radius: 1px;
 }
 
-/* ── Counterweight (near top of arm) ── */
+/* ── Counterweight ── */
 .tt-needle-weight {
   position: absolute;
-  top: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 40% 40%, #777 0%, #444 50%, #2a2a2a 100%);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  top: -8px;
+  left: 8px;
+  width: 8px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #9ca3af, #d1d5db 20%, #4b5563 80%, #1f2937);
+  box-shadow: 1px 2px 4px rgba(0,0,0,0.4);
 }
