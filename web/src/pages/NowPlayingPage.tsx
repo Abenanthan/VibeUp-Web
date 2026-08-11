@@ -27,6 +27,82 @@ type RightTab = 'lyrics' | 'artist';
 
 const fmt = (s: number) => { if (!s || isNaN(s)) return '0:00'; return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`; };
 
+/* ── Live equaliser strip ── */
+const LiveEq: React.FC<{ playing: boolean; bars?: number; height?: number }> = ({ playing, bars = 5, height = 14 }) => (
+  <span className={`eq-live${playing ? '' : ' eq-paused'}`} style={{ height: `${height}px` }} aria-hidden="true">
+    {Array.from({ length: bars }, (_, i) => <i key={i} />)}
+  </span>
+);
+
+/* ──────────────────────────────────────────
+   Scrub bar — drag/click/keyboard seeking.
+   Replaces the native range input so the fill can carry the brand gradient
+   and the whole track can grow on hover without fighting vendor pseudo-elements.
+────────────────────────────────────────── */
+const ScrubBar: React.FC<{ value: number; max: number; onSeek: (t: number) => void }> = ({ value, max, onSeek }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState<number | null>(null);
+
+  // While dragging, the thumb follows the pointer rather than the (still-playing) audio clock.
+  const shown = drag ?? value;
+  const pct = max > 0 ? Math.min(100, Math.max(0, (shown / max) * 100)) : 0;
+
+  const posToTime = useCallback((clientX: number) => {
+    const el = ref.current;
+    if (!el || max <= 0) return 0;
+    const r = el.getBoundingClientRect();
+    return Math.min(max, Math.max(0, ((clientX - r.left) / r.width) * max));
+  }, [max]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (max <= 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDrag(posToTime(e.clientX));
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (drag === null) return;
+    setDrag(posToTime(e.clientX));
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (drag === null) return;
+    onSeek(posToTime(e.clientX));
+    setDrag(null);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (max <= 0) return;
+    const step = e.shiftKey ? 30 : 5;
+    if (e.key === 'ArrowRight') { e.preventDefault(); onSeek(Math.min(max, value + step)); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); onSeek(Math.max(0, value - step)); }
+    else if (e.key === 'Home') { e.preventDefault(); onSeek(0); }
+    else if (e.key === 'End') { e.preventDefault(); onSeek(max); }
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="np-scrub"
+      role="slider"
+      tabIndex={0}
+      aria-label="Seek"
+      aria-valuemin={0}
+      aria-valuemax={Math.round(max)}
+      aria-valuenow={Math.round(shown)}
+      aria-valuetext={fmt(shown)}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => setDrag(null)}
+      onKeyDown={onKeyDown}
+    >
+      <div className="np-scrub-track">
+        <div className="np-scrub-fill" style={{ width: `${pct}%` }} />
+        <div className="np-scrub-thumb" style={{ left: `${pct}%` }} />
+      </div>
+    </div>
+  );
+};
+
 /* Mount-animated reveal (safe inside fixed overlays — no IntersectionObserver) */
 const Reveal: React.FC<{ children: React.ReactNode; delay?: number; y?: number; x?: number; style?: React.CSSProperties }> =
   ({ children, delay = 0, y = 12, x = 0, style }) => (
@@ -67,6 +143,9 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
   const lyricsRef = useRef<HTMLDivElement>(null);
   const lineRefs  = useRef<(HTMLParagraphElement | null)[]>([]);
 
+  const titleWrapRef = useRef<HTMLDivElement>(null);
+  const titleRef     = useRef<HTMLHeadingElement>(null);
+
   // 3D Parallax Motion Values (cover mode)
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);
@@ -78,8 +157,20 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
   const glareY = useTransform(mouseY, [0, 1], [0, 100]);
   const glare = useTransform([glareX, glareY], ([x, y]) => `radial-gradient(circle at ${x}% ${y}%, rgba(255,255,255,0.16) 0%, transparent 55%)`);
 
-  const liked    = currentSong ? isLiked(currentSong.id) : false;
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const liked = currentSong ? isLiked(currentSong.id) : false;
+
+  /* Only let the title scroll when it genuinely overflows — a marquee on a short
+     title is pure noise. Re-measured whenever the track or the viewport changes. */
+  useEffect(() => {
+    const wrap = titleWrapRef.current;
+    const el = titleRef.current;
+    if (!wrap || !el) return;
+    const measure = () => wrap.classList.toggle('is-scrolling', el.scrollWidth > wrap.clientWidth + 4);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [currentSong?.id, isOpen]);
 
   // Keep needle state in sync with play state (e.g. when user presses play/pause button)
   useEffect(() => {
@@ -177,14 +268,6 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
 
   const primaryArtist = currentSong.artist.split(',')[0].trim();
 
-  const iconBtn = (onClick: () => void, active: boolean, children: React.ReactNode, title?: string) => (
-    <HoverScale scale={1.15} tapScale={0.9}>
-      <button onClick={onClick} title={title} style={{ background: 'none', border: 'none', cursor: 'pointer', color: active ? 'var(--magenta)' : 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center' }}>
-        {children}
-      </button>
-    </HoverScale>
-  );
-
   const modeBtns: { id: ArtMode; icon: React.ReactNode; label: string }[] = [
     { id: 'vinyl',      icon: <Disc3 size={15} />,  label: 'Vinyl' },
     { id: 'cover',      icon: <Square size={14} />, label: 'Cover' },
@@ -201,13 +284,17 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
           transition={{ type: 'spring', damping: 28, stiffness: 220 }}
           style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#08060f' }}
         >
-          {/* Blurred album art background */}
+          {/* Breathing album-art wash — the room lights up in the track's colours */}
           <motion.div
             key={currentSong.imageUrl}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}
-            style={{ position: 'absolute', inset: 0, backgroundImage: `url(${currentSong.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(90px) brightness(0.22) saturate(1.5)', transform: 'scale(1.25)', zIndex: 0 }}
+            className="np-ambient"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }}
+            style={{ backgroundImage: `url(${currentSong.imageUrl})` }}
           />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8,6,15,0.7), rgba(8,6,15,0.82))', zIndex: 1, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8,6,15,0.62), rgba(8,6,15,0.86))', zIndex: 1, pointerEvents: 'none' }} />
+          {/* Fine grid + vignette to give the void some structure */}
+          <div className="bg-grid" style={{ zIndex: 1, opacity: 0.5 }} />
+          <div className="bg-vignette" style={{ zIndex: 1 }} />
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--accent), var(--magenta), transparent)', zIndex: 3, opacity: 0.7 }} />
 
           {/* Content */}
@@ -220,8 +307,11 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                   <ChevronDown size={22} />
                 </button>
               </HoverScale>
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '2.5px', color: 'rgba(255,255,255,0.35)', fontWeight: 700 }}>Now Playing</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 14px', borderRadius: '99px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)' }}>
+                <LiveEq playing={isPlaying} bars={4} height={11} />
+                <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '2.5px', color: 'rgba(255,255,255,0.55)', fontWeight: 800 }}>
+                  {isPlaying ? 'Now Playing' : 'Paused'}
+                </p>
               </div>
               <HoverScale>
                 <button onClick={() => setShowPlaylist(v => !v)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50%', width: '38px', height: '38px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -253,7 +343,15 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
               <div className="nowplaying-left">
 
                 {/* Album art */}
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'min(20px, 2.5vh)', flexShrink: 0 }}>
+                <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', marginBottom: 'min(20px, 2.5vh)', flexShrink: 0, isolation: 'isolate' }}>
+                  {/* Colour halo that breathes with the transport */}
+                  <div
+                    className={`np-halo${isPlaying ? '' : ' np-halo-idle'}`}
+                    /* Sized off the artwork box, then oversized so the glow spills past its edge.
+                       `translate` is used (not transform) so it composes with the keyframe scale. */
+                    style={{ width: 'min(430px, 53vh, 126%)', aspectRatio: '1/1', inset: 'auto', top: '-11%', left: '50%', translate: '-50% 0' }}
+                    aria-hidden="true"
+                  />
                   {artMode === 'turntable' ? (
                     /* ── TURNTABLE MODE: spinning circle + draggable needle ── */
                     <div
@@ -507,86 +605,123 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
 
                 {/* Song info */}
                 <Reveal delay={0.15} style={{ marginBottom: 'min(14px, 1.5vh)', flexShrink: 0, textAlign: 'center' }}>
-                  <h2 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.3px', lineHeight: 1.25, color: '#fff', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSong.title}</h2>
-                  <p style={{ fontSize: '13px', color: 'var(--accent-2)', fontWeight: 600 }}>{currentSong.artist}</p>
+                  <div ref={titleWrapRef} className="np-title-wrap" style={{ marginBottom: '6px' }}>
+                    <h2 ref={titleRef} className="np-title display-head" style={{ fontSize: 'clamp(22px, 3.4vh, 30px)', color: '#fff' }}>
+                      {currentSong.title}
+                    </h2>
+                  </div>
+                  <p
+                    onClick={() => { onClose(); onArtistClick?.(null, primaryArtist); }}
+                    style={{ fontSize: '13px', color: 'var(--accent-2)', fontWeight: 700, cursor: 'pointer', transition: 'color 0.18s', display: 'inline-block' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--accent-2)')}
+                  >
+                    {currentSong.artist}
+                  </p>
                 </Reveal>
 
-                {/* Progress bar */}
+                {/* Progress */}
                 <Reveal delay={0.2} style={{ marginBottom: 'min(14px, 1.5vh)', flexShrink: 0 }}>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max={duration || 100} 
-                    step="0.1"
-                    value={currentTime} 
-                    onChange={e => seekTo(parseFloat(e.target.value))} 
-                    style={{ width: '100%', cursor: 'pointer', marginBottom: '8px', '--range-progress': `${progress}%` } as React.CSSProperties} 
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{fmt(currentTime)}</span>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{fmt(duration)}</span>
+                  <ScrubBar value={currentTime} max={duration} onSeek={seekTo} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--accent-2)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmt(currentTime)}</span>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>-{fmt(Math.max(0, duration - currentTime))}</span>
                   </div>
                 </Reveal>
 
                 {/* Controls */}
                 <Reveal delay={0.25} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'min(18px, 2vh)', flexShrink: 0 }}>
-                  {iconBtn(toggleShuffle, isShuffle, <Shuffle size={18} />, 'Shuffle')}
-                  <HoverScale scale={1.15} tapScale={0.9}>
-                    <button onClick={playPrevious} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.8)' }}><SkipBack size={26} fill="currentColor" /></button>
-                  </HoverScale>
-                  <HoverScale scale={1.06} tapScale={0.9}>
-                    <button onClick={togglePlayPause} disabled={isResolvingUrl} style={{ width: '58px', height: '58px', borderRadius: '50%', background: 'var(--gradient-main)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 26px var(--accent-glow)', opacity: isResolvingUrl ? 0.6 : 1 }}>
+                  <button
+                    onClick={toggleShuffle}
+                    title="Shuffle"
+                    aria-label="Shuffle"
+                    aria-pressed={isShuffle}
+                    className={`np-icon-btn${isShuffle ? ' is-active' : ''}`}
+                  >
+                    <Shuffle size={18} />
+                  </button>
+
+                  <button onClick={playPrevious} title="Previous" aria-label="Previous track" className="np-icon-btn" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                    <SkipBack size={26} fill="currentColor" />
+                  </button>
+
+                  <div style={{ position: 'relative', display: 'flex' }}>
+                    {/* Pulse rings only while audio is actually running */}
+                    {isPlaying && !isResolvingUrl && (
+                      <>
+                        <span className="np-play-ring" aria-hidden="true" />
+                        <span className="np-play-ring np-play-ring-b" aria-hidden="true" />
+                      </>
+                    )}
+                    <button
+                      onClick={togglePlayPause}
+                      disabled={isResolvingUrl}
+                      className="np-play"
+                      aria-label={isPlaying ? 'Pause' : 'Play'}
+                      style={{ opacity: isResolvingUrl ? 0.6 : 1 }}
+                    >
                       <AnimatePresence mode="wait">
                         {isResolvingUrl ? (
                           <motion.div key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                            <div className="animate-spin" style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%' }} />
+                            <div className="animate-spin" style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%' }} />
                           </motion.div>
                         ) : isPlaying ? (
-                          <motion.div key="pause" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                            <Pause size={24} fill="#fff" color="#fff" />
+                          <motion.div key="pause" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0, rotate: 90 }} transition={{ type: 'spring', stiffness: 400, damping: 22 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                            <Pause size={26} fill="#fff" color="#fff" />
                           </motion.div>
                         ) : (
-                          <motion.div key="play" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                            <Play size={24} fill="#fff" color="#fff" style={{ transform: 'translateX(2px)' }} />
+                          <motion.div key="play" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0, rotate: 90 }} transition={{ type: 'spring', stiffness: 400, damping: 22 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                            <Play size={26} fill="#fff" color="#fff" style={{ transform: 'translateX(2px)' }} />
                           </motion.div>
                         )}
                       </AnimatePresence>
                     </button>
-                  </HoverScale>
-                  <HoverScale scale={1.15} tapScale={0.9}>
-                    <button onClick={playNext} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.8)' }}><SkipForward size={26} fill="currentColor" /></button>
-                  </HoverScale>
-                  <div style={{ position: 'relative' }}>
-                    {iconBtn(toggleRepeatMode, repeatMode !== 'none', <Repeat size={18} />, 'Repeat')}
+                  </div>
+
+                  <button onClick={playNext} title="Next" aria-label="Next track" className="np-icon-btn" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                    <SkipForward size={26} fill="currentColor" />
+                  </button>
+
+                  <div style={{ position: 'relative', display: 'flex' }}>
+                    <button
+                      onClick={toggleRepeatMode}
+                      title={`Repeat: ${repeatMode}`}
+                      aria-label={`Repeat: ${repeatMode}`}
+                      className={`np-icon-btn${repeatMode !== 'none' ? ' is-active' : ''}`}
+                    >
+                      <Repeat size={18} />
+                    </button>
                     <AnimatePresence>
                       {repeatMode === 'song' && (
-                        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ position: 'absolute', top: '-3px', right: '-3px', background: 'var(--magenta)', color: '#fff', fontSize: '7px', fontWeight: 800, borderRadius: '50%', width: '12px', height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</motion.span>
+                        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} style={{ position: 'absolute', top: '4px', right: '4px', background: 'var(--magenta)', color: '#fff', fontSize: '7px', fontWeight: 800, borderRadius: '50%', width: '13px', height: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>1</motion.span>
                       )}
                     </AnimatePresence>
                   </div>
                 </Reveal>
 
                 {/* Utility row */}
-                <Reveal delay={0.3} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 'var(--radius-lg)', flexShrink: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <HoverScale scale={1.2} tapScale={0.9}>
-                      <button onClick={() => toggleLike(currentSong)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: liked ? 'var(--danger)' : 'rgba(255,255,255,0.5)', display: 'flex' }}><Heart size={17} fill={liked ? 'var(--danger)' : 'none'} /></button>
-                    </HoverScale>
-                    <HoverScale scale={1.15} tapScale={0.9}>
-                      <button onClick={onOpenEq} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex' }}><Sliders size={16} /></button>
-                    </HoverScale>
-                    <HoverScale scale={1.15} tapScale={0.9}>
-                      <div style={{ position: 'relative' }}>
-                        <button onClick={onOpenQueue} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex' }}><ListMusic size={16} /></button>
-                        {activeQueue.length > 0 && <span style={{ position: 'absolute', top: '-5px', right: '-7px', background: 'var(--magenta)', color: '#fff', fontSize: '7px', borderRadius: '10px', padding: '1px 3px', fontWeight: 800 }}>{activeQueue.length}</span>}
-                      </div>
-                    </HoverScale>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    <button onClick={handleMute} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex' }}>
-                      {volume === 0 ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                <Reveal delay={0.3} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '99px', backdropFilter: 'blur(12px)', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <button
+                      onClick={() => toggleLike(currentSong)}
+                      className="np-icon-btn"
+                      aria-label={liked ? 'Remove from liked songs' : 'Add to liked songs'}
+                      aria-pressed={liked}
+                      style={liked ? { color: 'var(--danger)', background: 'rgba(244,63,94,0.12)' } : undefined}
+                    >
+                      <Heart size={17} fill={liked ? 'var(--danger)' : 'none'} />
                     </button>
-                    <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(parseFloat(e.target.value))} style={{ width: '80px', '--range-progress': `${volume * 100}%` } as React.CSSProperties} />
+                    <button onClick={onOpenEq} className="np-icon-btn" aria-label="Equalizer" title="Equalizer"><Sliders size={16} /></button>
+                    <div style={{ position: 'relative', display: 'flex' }}>
+                      <button onClick={onOpenQueue} className="np-icon-btn" aria-label={`Queue (${activeQueue.length})`} title="Queue"><ListMusic size={16} /></button>
+                      {activeQueue.length > 0 && <span style={{ position: 'absolute', top: '3px', right: '1px', background: 'var(--magenta)', color: '#fff', fontSize: '8px', borderRadius: '10px', padding: '1px 4px', fontWeight: 800, pointerEvents: 'none', boxShadow: '0 0 10px var(--magenta-glow)' }}>{activeQueue.length}</span>}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingRight: '8px' }}>
+                    <button onClick={handleMute} className="np-icon-btn" style={{ width: '32px', height: '32px' }} aria-label={volume === 0 ? 'Unmute' : 'Mute'}>
+                      {volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
+                    </button>
+                    <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(parseFloat(e.target.value))} aria-label="Volume" style={{ width: '80px', '--range-progress': `${volume * 100}%` } as React.CSSProperties} />
                   </div>
                 </Reveal>
               </div>
@@ -639,8 +774,10 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
                                     key={idx}
                                     ref={el => { lineRefs.current[idx] = el; }}
                                     onClick={() => seekTo(line.timeMs / 1000)}
+                                    className={isActive ? 'lyric-active' : undefined}
                                     initial={false}
-                                    animate={{ fontSize: isActive ? '22px' : '17px', color: isActive ? 'var(--accent-2)' : 'var(--text-secondary)', opacity: isActive ? 1 : 0.35, scale: isActive ? 1.04 : 1 }}
+                                    animate={{ fontSize: isActive ? '24px' : '17px', color: isActive ? '#fff' : 'var(--text-secondary)', opacity: isActive ? 1 : 0.3, scale: isActive ? 1.02 : 1, x: isActive ? 6 : 0 }}
+                                    transition={{ type: 'spring', stiffness: 300, damping: 26 }}
                                     style={{ fontWeight: 800, lineHeight: 1.5, cursor: 'pointer', letterSpacing: '-0.2px', margin: 0, padding: '3px 0', transformOrigin: 'left center' }}
                                     whileHover={{ color: 'var(--text-primary)', opacity: 0.75 }}
                                   >

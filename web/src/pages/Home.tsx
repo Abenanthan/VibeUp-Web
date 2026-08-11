@@ -1,11 +1,21 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Play, Heart, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import {
+  Play, Heart, Plus, ChevronRight, ChevronLeft, Shuffle, Sparkles,
+  Flame, PartyPopper, Waves, CloudRain, Target, Dumbbell,
+} from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 import { useLibrary } from '../context/LibraryContext';
 import { saavnApi } from '../services/api';
 import type { Song } from '../types';
 import { FadeInView, StaggerContainer, StaggerItem, HoverScale, MotionCard } from '../components/motion';
 import { ArtistCoverflow } from '../components/ArtistCoverflow';
+
+/* ── Live equaliser strip — pauses with the transport ── */
+const LiveEq: React.FC<{ playing: boolean; bars?: number; height?: number }> = ({ playing, bars = 7, height = 22 }) => (
+  <span className={`eq-live${playing ? '' : ' eq-paused'}`} style={{ height: `${height}px` }} aria-hidden="true">
+    {Array.from({ length: bars }, (_, i) => <i key={i} />)}
+  </span>
+);
 
 /* ── Horizontal scroll container ── */
 const HorizontalScroll: React.FC<{ children: React.ReactNode; gap?: string }> = ({ children, gap = '14px' }) => {
@@ -92,7 +102,8 @@ const SongCard: React.FC<{
   activeMenuId: string | null; setActiveMenuId: (id: string | null) => void;
   handlePlay: (s: Song, q: Song[]) => void;
   onArtistClick?: (id: string | null, name: string) => void;
-}> = ({ song, queue, activeMenuId, setActiveMenuId, handlePlay, onArtistClick }) => {
+  rank?: number;
+}> = ({ song, queue, activeMenuId, setActiveMenuId, handlePlay, onArtistClick, rank }) => {
   const { toggleLike, isLiked, playlists, addSongToPlaylist } = useLibrary();
   const { currentSong, isPlaying } = useAudio();
   const [hov, setHov] = useState(false);
@@ -102,7 +113,7 @@ const SongCard: React.FC<{
 
   return (
     <StaggerItem style={{ width: '148px', flexShrink: 0, cursor: 'pointer', position: 'relative' }}>
-      <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ position: 'relative' }}>
+      <div className="song-card-hot" onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ position: 'relative' }}>
         {hov && (
           <div
             className="song-card-glow"
@@ -124,9 +135,11 @@ const SongCard: React.FC<{
         )}
         <MotionCard style={{ position: 'relative', width: '148px', height: '148px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', zIndex: 1, border: hov ? '1px solid var(--accent)' : '1px solid transparent', boxShadow: hov ? '0 0 20px var(--accent-glow), 0 0 40px var(--magenta-glow), 0 8px 32px rgba(0,0,0,0.55)' : '0 3px 10px rgba(0,0,0,0.3)', transition: 'box-shadow 0.35s ease, transform 0.25s ease, border-color 0.25s', transform: hov ? 'translateY(-6px) scale(1.03)' : 'none' }}>
           <img src={song.imageUrl} alt={song.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s', transform: hov ? 'scale(1.04)' : 'scale(1)' }} />
-          {/* Now playing teal indicator */}
+          {/* Now-playing badge — live bars instead of a static dot */}
           {isNowPlaying && (
-            <div style={{ position: 'absolute', top: '8px', left: '8px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--teal)', boxShadow: '0 0 8px var(--teal)' }} />
+            <div style={{ position: 'absolute', top: '7px', left: '7px', zIndex: 4, display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 8px', borderRadius: '99px', background: 'rgba(8,6,15,0.72)', backdropFilter: 'blur(8px)', border: '1px solid var(--border-strong)' }}>
+              <LiveEq playing={isPlaying} bars={3} height={10} />
+            </div>
           )}
           {/* Play overlay */}
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.42)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: hov ? 1 : 0, transition: 'opacity 0.2s' }}>
@@ -153,6 +166,8 @@ const SongCard: React.FC<{
               ))}
             </div>
           )}
+          {/* Chart position — outlined numeral bleeding off the artwork corner */}
+          {rank !== undefined && <span className="rank-badge">{rank}</span>}
         </MotionCard>
         <p style={{ fontSize: '12px', fontWeight: 600, color: isNowPlaying ? 'var(--accent)' : 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>{song.title}</p>
         <p
@@ -171,29 +186,53 @@ const SongCard: React.FC<{
   );
 };
 
+/* ── Section header — accent bar + display type + optional play-all ── */
+const SectionHead: React.FC<{
+  title: string; eyebrow?: string; onPlayAll?: () => void; viewAll?: () => void;
+}> = ({ title, eyebrow, onPlayAll, viewAll }) => (
+  <div className="section-head">
+    <div className="section-head-title">
+      <span className="section-bar" />
+      <div style={{ minWidth: 0 }}>
+        {eyebrow && <p className="section-label" style={{ marginBottom: '1px' }}>{eyebrow}</p>}
+        <h3>{title}</h3>
+      </div>
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+      {onPlayAll && (
+        <HoverScale scale={1.08} tapScale={0.92}>
+          <button onClick={onPlayAll} title={`Shuffle ${title}`} aria-label={`Shuffle ${title}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-medium)', cursor: 'pointer', color: 'var(--text-secondary)', transition: 'color 0.15s, border-color 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-2)'; e.currentTarget.style.borderColor = 'var(--border-strong)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-medium)'; }}>
+            <Shuffle size={13} />
+          </button>
+        </HoverScale>
+      )}
+      {viewAll && (
+        <HoverScale scale={1.05} tapScale={0.95}>
+          <button onClick={viewAll} style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, fontFamily: 'var(--font)', transition: 'color 0.15s' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
+            See all <ChevronRight size={13} />
+          </button>
+        </HoverScale>
+      )}
+    </div>
+  </div>
+);
+
 /* ── Section ── */
 const Section: React.FC<{
-  title: string; songs: Song[]; viewAll?: () => void;
+  title: string; eyebrow?: string; songs: Song[]; viewAll?: () => void;
   activeMenuId: string | null; setActiveMenuId: (id: string | null) => void;
   handlePlay: (s: Song, q: Song[]) => void;
   onArtistClick?: (id: string | null, name: string) => void;
-}> = ({ title, songs, viewAll, activeMenuId, setActiveMenuId, handlePlay, onArtistClick }) => {
+  ranked?: boolean;
+}> = ({ title, eyebrow, songs, viewAll, activeMenuId, setActiveMenuId, handlePlay, onArtistClick, ranked }) => {
   if (!songs.length) return null;
+  const shuffleSection = () => handlePlay(songs[Math.floor(Math.random() * songs.length)], songs);
   return (
-    <FadeInView direction="left" delay={0.1} style={{ marginBottom: '38px', minWidth: 0, width: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>{title}</h3>
-        {viewAll && (
-          <HoverScale scale={1.05} tapScale={0.95}>
-            <button onClick={viewAll} style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 500, fontFamily: 'var(--font)', transition: 'color 0.15s' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
-              See all <ChevronRight size={13} />
-            </button>
-          </HoverScale>
-        )}
-      </div>
+    <FadeInView direction="left" delay={0.1} style={{ marginBottom: '38px', minWidth: 0, width: '100%', position: 'relative', zIndex: 1 }}>
+      <SectionHead title={title} eyebrow={eyebrow} onPlayAll={shuffleSection} viewAll={viewAll} />
       <HorizontalScroll gap="14px">
         <StaggerContainer style={{ display: 'flex', gap: '14px' }}>
-          {songs.map(song => <SongCard key={song.id} song={song} queue={songs} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />)}
+          {songs.map((song, i) => <SongCard key={song.id} song={song} queue={songs} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} rank={ranked ? i + 1 : undefined} />)}
         </StaggerContainer>
       </HorizontalScroll>
     </FadeInView>
@@ -243,20 +282,20 @@ const ARTISTS = [
   { name: 'Devi Sri Prasad', image: 'https://c.saavncdn.com/artists/Devi_Sri_Prasad_500x500.jpg', query: 'Devi Sri Prasad' },
 ];
 
-const MOODS = [
-  { label: 'Romantic', query: 'romantic love songs', bg: 'linear-gradient(135deg, #7a1f52 0%, #d6407e 100%)' },
-  { label: 'Party', query: 'party dance songs', bg: 'linear-gradient(135deg, #4a1d7a 0%, #a855f7 100%)' },
-  { label: 'Chill', query: 'chill relaxing songs', bg: 'linear-gradient(135deg, #0c3a52 0%, #1591b0 100%)' },
-  { label: 'Sad', query: 'sad emotional songs', bg: 'linear-gradient(135deg, #1e1a40 0%, #3a2d6e 100%)' },
-  { label: 'Focus', query: 'focus concentration music', bg: 'linear-gradient(135deg, #241a52 0%, #4f46c8 100%)' },
-  { label: 'Workout', query: 'workout gym songs', bg: 'linear-gradient(135deg, #5a0c3a 0%, #c01e6e 100%)' },
+const MOODS: { label: string; sub: string; query: string; bg: string; icon: React.ReactNode }[] = [
+  { label: 'Romantic', sub: 'Slow burn',    query: 'romantic love songs',        bg: 'linear-gradient(135deg, #7a1f52 0%, #d6407e 100%)', icon: <Heart size={17} /> },
+  { label: 'Party',    sub: 'Full send',    query: 'party dance songs',          bg: 'linear-gradient(135deg, #4a1d7a 0%, #a855f7 100%)', icon: <PartyPopper size={17} /> },
+  { label: 'Chill',    sub: 'Wind down',    query: 'chill relaxing songs',       bg: 'linear-gradient(135deg, #0c3a52 0%, #1591b0 100%)', icon: <Waves size={17} /> },
+  { label: 'Sad',      sub: 'In your feels',query: 'sad emotional songs',        bg: 'linear-gradient(135deg, #1e1a40 0%, #3a2d6e 100%)', icon: <CloudRain size={17} /> },
+  { label: 'Focus',    sub: 'Locked in',    query: 'focus concentration music',  bg: 'linear-gradient(135deg, #241a52 0%, #4f46c8 100%)', icon: <Target size={17} /> },
+  { label: 'Workout',  sub: 'Go harder',    query: 'workout gym songs',          bg: 'linear-gradient(135deg, #5a0c3a 0%, #c01e6e 100%)', icon: <Dumbbell size={17} /> },
 ];
 
 export const Home: React.FC<{
   setCurrentTab: (tab: string) => void;
   onArtistClick: (artistId: string | null, artistName: string) => void;
 }> = ({ setCurrentTab: _setCurrentTab, onArtistClick }) => {
-  const { playSong, currentSong } = useAudio();
+  const { playSong, currentSong, isPlaying } = useAudio();
   const { recentlyPlayed, addToRecentlyPlayed } = useLibrary();
 
   const [favourites, setFavourites] = useState<Song[]>([]);
@@ -357,54 +396,116 @@ export const Home: React.FC<{
     } catch (e) { console.error(e); }
   };
 
+  /* The one track the hero puts front and centre — favourites first, trending as fallback. */
+  const featured = useMemo(() => favourites[0] ?? trending[0] ?? null, [favourites, trending]);
+  const heroIsLive = !!featured && currentSong?.id === featured.id && isPlaying;
+
+  /* Everything on the page, flattened — powers the "Shuffle everything" CTA. */
+  const allSongs = useMemo(
+    () => [...favourites, ...trending, ...newReleases, ...tamilHits, ...teluguHits, ...hindiHits],
+    [favourites, trending, newReleases, tamilHits, teluguHits, hindiHits],
+  );
+
+  const shuffleAll = () => {
+    if (!allSongs.length) return;
+    const shuffled = [...allSongs].sort(() => Math.random() - 0.5);
+    handlePlay(shuffled[0], shuffled);
+  };
+
   return (
-    <div onClick={() => setActiveMenuId(null)} className="page-content">
+    <div onClick={() => setActiveMenuId(null)} className="page-content" style={{ position: 'relative' }}>
+
+      {/* Ambient colour wash anchored to the top of the scroll region */}
+      <div className="home-aurora" aria-hidden="true" />
 
       {/* ── Header ── */}
-      <FadeInView direction="up" delay={0.1} style={{ marginBottom: '36px' }} className="home-greeting">
-        <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.5px', marginBottom: '5px' }}>{greeting}</p>
-        <h2 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.15, color: 'var(--text-primary)' }}>
-          What's your vibe<span style={{ color: 'var(--accent)' }}>?</span>
+      <FadeInView direction="up" delay={0.1} style={{ marginBottom: '26px', position: 'relative', zIndex: 1 }} className="home-greeting">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <Sparkles size={13} color="var(--accent-2)" />
+          <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>{greeting}</p>
+        </div>
+        <h2 className="display-head" style={{ fontSize: '38px', color: 'var(--text-primary)' }}>
+          What's your <span className="text-flame">vibe</span>
+          <span style={{ color: 'var(--magenta)' }}>?</span>
         </h2>
       </FadeInView>
 
       {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '280px', flexDirection: 'column', gap: '14px' }}>
-          <div className="animate-spin" style={{ width: '32px', height: '32px', border: '2.5px solid var(--border-medium)', borderTopColor: 'var(--accent)', borderRadius: '50%' }} />
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Loading music…</p>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', flexDirection: 'column', gap: '18px' }}>
+          <LiveEq playing bars={7} height={46} />
+          <p className="shimmer-text" style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '0.4px' }}>Warming up the decks…</p>
         </div>
       ) : (
         <>
-          {/* Recently Played */}
+          {/* ── Featured hero ── */}
+          {featured && (
+            <FadeInView direction="up" delay={0.05}>
+              <div className="hero-feature">
+                <div className="hero-feature-bleed" style={{ backgroundImage: `url(${featured.imageUrl})` }} aria-hidden="true" />
+
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '12px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: '99px', background: 'var(--magenta-dim)', border: '1px solid var(--border-strong)', fontSize: '9px', fontWeight: 800, letterSpacing: '1.4px', textTransform: 'uppercase', color: 'var(--accent-3)' }}>
+                      <Flame size={11} /> Today's pick
+                    </span>
+                    {heroIsLive && <LiveEq playing bars={5} height={14} />}
+                  </div>
+
+                  <h3 className="display-head" style={{ fontSize: 'clamp(24px, 4vw, 40px)', color: '#fff', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {featured.title}
+                  </h3>
+                  <p
+                    onClick={() => onArtistClick?.(null, featured.artist)}
+                    style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent-2)', marginBottom: '20px', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--accent-2)')}
+                  >
+                    {featured.artist}
+                  </p>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                    <button className="hype-btn" onClick={() => handlePlay(featured, favourites.length ? favourites : trending)}>
+                      <Play size={15} fill="#fff" /> Play now
+                    </button>
+                    <button className="hype-btn hype-btn-ghost" onClick={shuffleAll}>
+                      <Shuffle size={15} /> Shuffle everything
+                    </button>
+                  </div>
+                </div>
+
+                <div className="hero-feature-art">
+                  <img src={featured.imageUrl} alt={featured.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </div>
+              </div>
+            </FadeInView>
+          )}
+
+          {/* ── Recently Played — glass chips ── */}
           {recentlyPlayed.length > 0 && (
-            <FadeInView direction="up" delay={0.1} style={{ marginBottom: '36px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '14px', letterSpacing: '-0.2px' }}>Recently Played</h3>
-              <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+            <FadeInView direction="up" delay={0.1} style={{ marginBottom: '36px', position: 'relative', zIndex: 1 }}>
+              <SectionHead title="Jump back in" eyebrow="Recently played" />
+              <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '9px' }}>
                 {recentlyPlayed.slice(0, 6).map(song => {
                   const active = currentSong?.id === song.id;
                   return (
                     <StaggerItem key={song.id}>
-                      <HoverScale scale={1.03} tapScale={0.97}>
-                        <div style={{ position: 'relative', width: '100%' }}>
-                          <button onClick={() => handlePlay(song, recentlyPlayed)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px 7px 7px', background: active ? 'var(--accent-dim)' : 'var(--bg-elevated)', border: `1px solid ${active ? 'var(--accent-glow)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left', transition: 'background 0.15s, border-color 0.15s', fontFamily: 'var(--font)' }} onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-hover)'; } }} onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-elevated)'; } }}>
-                            <img src={song.imageUrl} alt={song.title} style={{ width: '38px', height: '38px', borderRadius: '7px', objectFit: 'cover', flexShrink: 0 }} />
-                            <div style={{ overflow: 'hidden', flex: 1 }}>
-                              <p style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: active ? 'var(--accent)' : 'var(--text-primary)' }}>{song.title}</p>
-                              <p
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onArtistClick?.(null, song.artist);
-                                }}
-                                style={{ fontSize: '10px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px', cursor: 'pointer' }}
-                                onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
-                                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-                              >
-                                {song.artist}
-                              </p>
-                            </div>
-                          </button>
+                      <button onClick={() => handlePlay(song, recentlyPlayed)} className={`recent-chip${active ? ' is-active' : ''}`}>
+                        <img src={song.imageUrl} alt="" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        <div style={{ overflow: 'hidden', flex: 1 }}>
+                          <p style={{ fontSize: '12px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: active ? 'var(--accent-2)' : 'var(--text-primary)' }}>{song.title}</p>
+                          <p
+                            onClick={(e) => { e.stopPropagation(); onArtistClick?.(null, song.artist); }}
+                            style={{ fontSize: '10px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '1px', cursor: 'pointer' }}
+                            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+                            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                          >
+                            {song.artist}
+                          </p>
                         </div>
-                      </HoverScale>
+                        {active
+                          ? <LiveEq playing={isPlaying} bars={3} height={13} />
+                          : <Play size={13} fill="var(--text-tertiary)" color="var(--text-tertiary)" style={{ flexShrink: 0 }} />}
+                      </button>
                     </StaggerItem>
                   );
                 })}
@@ -412,38 +513,41 @@ export const Home: React.FC<{
             </FadeInView>
           )}
 
-          <Section title="Abe's Favourites" songs={favourites} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Abe's Favourites" eyebrow="Hand-picked" songs={favourites} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
 
-          {/* Moods */}
-          <FadeInView direction="up" delay={0.2} style={{ marginBottom: '36px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '14px', letterSpacing: '-0.2px' }}>Moods</h3>
-            <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
+          {/* ── Moods ── */}
+          <FadeInView direction="up" delay={0.2} style={{ marginBottom: '36px', position: 'relative', zIndex: 1 }}>
+            <SectionHead title="Pick a mood" eyebrow="Instant playlist" />
+            <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', gap: '11px' }}>
               {MOODS.map(m => (
                 <StaggerItem key={m.label}>
-                  <HoverScale scale={1.05} tapScale={0.95}>
-                    <button onClick={() => handleMood(m.query)} style={{ width: '100%', height: '82px', background: m.bg, border: 'none', borderRadius: 'var(--radius-lg)', cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: '14px 16px', textAlign: 'left', transition: 'filter 0.2s', position: 'relative', overflow: 'hidden', fontFamily: 'var(--font)' }} onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.12)'; }} onMouseLeave={e => { e.currentTarget.style.filter = 'brightness(1)'; }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.1px' }}>{m.label}</span>
-                    </button>
-                  </HoverScale>
+                  <button className="mood-tile" onClick={() => handleMood(m.query)} style={{ background: m.bg }}>
+                    <span className="mood-tile-icon">{m.icon}</span>
+                    <span style={{ display: 'block' }}>
+                      <span style={{ display: 'block', fontSize: '15px', fontWeight: 800, color: '#fff', letterSpacing: '-0.2px' }}>{m.label}</span>
+                      <span style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.65)', marginTop: '1px' }}>{m.sub}</span>
+                    </span>
+                  </button>
                 </StaggerItem>
               ))}
             </StaggerContainer>
           </FadeInView>
-          <Section title="Trending Now" songs={trending} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
-          <Section title="New Releases" songs={newReleases} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+
+          <Section title="Trending Now" eyebrow="Top 12 this week" songs={trending} ranked activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="New Releases" eyebrow="Fresh drops" songs={newReleases} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
 
           {/* Artists — scroll-driven 3D coverflow */}
-          <FadeInView direction="left" delay={0.1} style={{ marginBottom: '38px', minWidth: 0 }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', letterSpacing: '-0.2px' }}>Artists</h3>
+          <FadeInView direction="left" delay={0.1} style={{ marginBottom: '38px', minWidth: 0, position: 'relative', zIndex: 1 }}>
+            <SectionHead title="Artists" eyebrow="On repeat" />
             <ArtistCoverflow
               artists={ARTISTS.map(a => ({ image: a.image, name: a.name, query: a.query }))}
               onArtistClick={onArtistClick}
             />
           </FadeInView>
 
-          <Section title="Tamil Hits" songs={tamilHits} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
-          <Section title="Telugu Hits" songs={teluguHits} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
-          <Section title="Hindi Hits" songs={hindiHits} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Tamil Hits" eyebrow="Kollywood" songs={tamilHits} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Telugu Hits" eyebrow="Tollywood" songs={teluguHits} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
+          <Section title="Hindi Hits" eyebrow="Bollywood" songs={hindiHits} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} handlePlay={handlePlay} onArtistClick={onArtistClick} />
         </>
       )}
     </div>

@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
 
 /* ─────────────────────────────────────────
    VibeUp — Design Tokens
@@ -62,6 +63,8 @@
 
   /* Typography */
   --font: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Display face — used for hero/section headlines only (never body copy) */
+  --font-display: 'Righteous', 'Outfit', -apple-system, sans-serif;
 
   /* Radii */
   --radius-sm: 8px;
@@ -1321,4 +1324,633 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 4px;
   background: linear-gradient(90deg, #9ca3af, #d1d5db 20%, #4b5563 80%, #1f2937);
   box-shadow: 1px 2px 4px rgba(0,0,0,0.4);
+}
+
+/* ═══════════════════════════════════════════
+   HYPE LAYER — Home + Now Playing
+   Ambient aurora, live equalisers, neon chrome
+═══════════════════════════════════════════ */
+
+/* ─── Display headline helper ─── */
+.display-head {
+  font-family: var(--font-display);
+  /* Righteous ships a single weight — faking bold smears it */
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  line-height: 1.05;
+}
+
+/* ─── Ambient aurora behind the Home scroll content ─── */
+.home-aurora {
+  position: absolute;
+  top: -180px;
+  left: -20%;
+  right: -20%;
+  height: 720px;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(34% 44% at 22% 30%, rgba(168, 85, 247, 0.34) 0%, transparent 62%),
+    radial-gradient(30% 40% at 74% 22%, rgba(236, 72, 153, 0.28) 0%, transparent 62%),
+    radial-gradient(36% 42% at 52% 68%, rgba(34, 211, 238, 0.16) 0%, transparent 62%);
+  filter: blur(52px) saturate(1.15);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+  animation: auroraDrift 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes auroraDrift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-3%, 2%, 0) scale(1.06);
+  }
+}
+
+/* ─── Live equaliser strip (JS toggles .eq-paused) ─── */
+.eq-live {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+}
+
+.eq-live i {
+  display: block;
+  width: 3px;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--gradient-flame);
+  transform-origin: bottom;
+  animation: eqBounce 0.9s ease-in-out infinite alternate;
+}
+
+.eq-live i:nth-child(1) { animation-duration: 0.62s; }
+.eq-live i:nth-child(2) { animation-duration: 0.94s; animation-delay: 0.08s; }
+.eq-live i:nth-child(3) { animation-duration: 0.74s; animation-delay: 0.16s; }
+.eq-live i:nth-child(4) { animation-duration: 1.08s; animation-delay: 0.04s; }
+.eq-live i:nth-child(5) { animation-duration: 0.84s; animation-delay: 0.20s; }
+.eq-live i:nth-child(6) { animation-duration: 1.20s; animation-delay: 0.12s; }
+.eq-live i:nth-child(7) { animation-duration: 0.70s; animation-delay: 0.24s; }
+
+.eq-live.eq-paused i {
+  animation-play-state: paused;
+  transform: scaleY(0.28);
+}
+
+/* ═══════════ HOME — Featured hero ═══════════ */
+.hero-feature {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 32px;
+  padding: 26px 30px;
+  margin-bottom: 40px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-medium);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.07) 55%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(22px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Blurred artwork bleeding through the glass */
+.hero-feature-bleed {
+  position: absolute;
+  inset: -40%;
+  z-index: -2;
+  background-size: cover;
+  background-position: center;
+  filter: blur(70px) saturate(1.7) brightness(0.55);
+  opacity: 0.55;
+  animation: auroraDrift 22s ease-in-out infinite reverse;
+}
+
+/* Sheen that sweeps across on hover */
+.hero-feature::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.10) 50%, transparent 80%);
+  transform: skewX(-16deg);
+  transition: left 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  pointer-events: none;
+}
+
+.hero-feature:hover::after {
+  left: 130%;
+}
+
+.hero-feature-art {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px var(--accent-glow);
+  transition: transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.hero-feature:hover .hero-feature-art {
+  transform: translateY(-6px) rotate(-2deg) scale(1.03);
+}
+
+/* ─── Big pill CTA ─── */
+.hype-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 24px;
+  min-height: 44px;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #fff;
+  background: var(--gradient-main);
+  background-size: 200% auto;
+  box-shadow: 0 8px 26px var(--accent-glow);
+  transition: transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.25s ease, background-position 0.5s ease;
+}
+
+.hype-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  background-position: right center;
+  box-shadow: 0 12px 34px var(--accent-glow), 0 0 30px var(--magenta-glow);
+}
+
+.hype-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.hype-btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-strong);
+  box-shadow: none;
+  color: var(--text-primary);
+}
+
+.hype-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.11);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Section headers with accent bar ─── */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-head-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.section-bar {
+  width: 4px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 99px;
+  background: var(--gradient-flame);
+  box-shadow: 0 0 12px var(--magenta-glow);
+}
+
+.section-head h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 19px;
+  letter-spacing: 0.3px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Mood tiles ─── */
+.mood-tile {
+  position: relative;
+  width: 100%;
+  height: 108px;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px 16px;
+  text-align: left;
+  font-family: var(--font);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.25s ease;
+}
+
+.mood-tile:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.5), 0 0 26px var(--accent-glow);
+}
+
+.mood-tile:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+/* Rotating conic light inside each tile */
+.mood-tile::before {
+  content: '';
+  position: absolute;
+  inset: -60%;
+  z-index: -1;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(255, 255, 255, 0.16) 60deg, transparent 140deg);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  animation: conicSpin 6s linear infinite;
+}
+
+.mood-tile:hover::before {
+  opacity: 1;
+}
+
+/* Depth shading so the flat gradient doesn't read as plastic */
+.mood-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 80% 15%, rgba(255, 255, 255, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 15% 90%, rgba(0, 0, 0, 0.28) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.mood-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  transition: transform 0.3s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+
+.mood-tile:hover .mood-tile-icon {
+  transform: rotate(-10deg) scale(1.12);
+}
+
+/* ─── Rank badge on trending cards ─── */
+.rank-badge {
+  position: absolute;
+  left: 7px;
+  bottom: 0;
+  z-index: 3;
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.55);
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  transition: -webkit-text-stroke-color 0.25s ease, transform 0.25s ease;
+}
+
+.song-card-hot:hover .rank-badge {
+  -webkit-text-stroke-color: var(--accent-3);
+  transform: translateY(-3px) scale(1.06);
+}
+
+/* ─── Recently-played glass chips ─── */
+.recent-chip {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font);
+  color: var(--text-primary);
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.25s ease;
+}
+
+.recent-chip:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-strong);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), -4px 0 20px var(--accent-glow);
+}
+
+.recent-chip.is-active {
+  background: var(--accent-dim);
+  border-color: var(--accent-glow);
+}
+
+/* ═══════════ NOW PLAYING ═══════════ */
+
+/* Slow-breathing colour wash driven by the album art */
+.np-ambient {
+  position: absolute;
+  inset: -30%;
+  z-index: 0;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  filter: blur(90px) brightness(0.3) saturate(2);
+  animation: npBreathe 14s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes npBreathe {
+
+  0%,
+  100% {
+    transform: scale(1.15) rotate(0deg);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: scale(1.32) rotate(4deg);
+    opacity: 1;
+  }
+}
+
+/* Beat-pulsing halo behind the artwork */
+.np-halo {
+  position: absolute;
+  inset: -14%;
+  z-index: -3;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, var(--magenta-glow) 45%, transparent 70%);
+  filter: blur(30px);
+  animation: haloPulse 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes haloPulse {
+
+  0%,
+  100% {
+    transform: scale(0.94);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 0.9;
+  }
+}
+
+.np-halo-idle {
+  animation-play-state: paused;
+  opacity: 0.28;
+}
+
+/* ─── Custom scrub bar (replaces the raw range input) ─── */
+.np-scrub {
+  position: relative;
+  width: 100%;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.np-scrub-track {
+  position: relative;
+  width: 100%;
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.10);
+  transition: height 0.18s ease;
+}
+
+.np-scrub:hover .np-scrub-track,
+.np-scrub:focus-visible .np-scrub-track {
+  height: 9px;
+}
+
+.np-scrub-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 99px;
+  background: var(--gradient-main);
+  background-size: 200% auto;
+  animation: hueFlow 4s linear infinite;
+  box-shadow: 0 0 14px var(--accent-glow);
+}
+
+.np-scrub-thumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%) scale(0.72);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.14), 0 2px 10px rgba(0, 0, 0, 0.6);
+  transition: transform 0.18s cubic-bezier(0.34, 1.5, 0.64, 1);
+  pointer-events: none;
+}
+
+.np-scrub:hover .np-scrub-thumb,
+.np-scrub:focus-visible .np-scrub-thumb {
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.np-scrub:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 4px;
+  border-radius: 99px;
+}
+
+/* ─── Play button with expanding pulse rings ─── */
+.np-play {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-main);
+  background-size: 200% auto;
+  box-shadow: 0 10px 34px var(--accent-glow), 0 0 22px var(--magenta-glow);
+  transition: transform 0.2s cubic-bezier(0.34, 1.5, 0.64, 1), box-shadow 0.25s ease, background-position 0.5s ease;
+}
+
+.np-play:hover {
+  transform: scale(1.07);
+  background-position: right center;
+  box-shadow: 0 14px 44px var(--accent-glow), 0 0 40px var(--magenta-glow);
+}
+
+.np-play:active {
+  transform: scale(0.94);
+}
+
+.np-play-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent-2);
+  pointer-events: none;
+  animation: pulse-ring 2.4s ease-out infinite;
+}
+
+.np-play-ring-b {
+  animation-delay: 1.2s;
+}
+
+/* ─── Transport icon buttons — 44px hit area ─── */
+.np-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.np-icon-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.08);
+}
+
+.np-icon-btn:active {
+  transform: scale(0.9);
+}
+
+.np-icon-btn.is-active {
+  color: var(--magenta);
+  background: var(--magenta-dim);
+}
+
+/* ─── Marquee for long titles ─── */
+.np-title-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+  mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+}
+
+/* Only slides when the text actually overflows (JS toggles .is-scrolling) */
+.np-title-wrap.is-scrolling .np-title {
+  display: inline-block;
+  padding-right: 64px;
+  animation: titleSlide 13s linear infinite;
+}
+
+@keyframes titleSlide {
+
+  0%,
+  12% {
+    transform: translateX(0);
+  }
+
+  88%,
+  100% {
+    transform: translateX(calc(-100% + 100px));
+  }
+}
+
+/* ─── Active lyric line glow ─── */
+.lyric-active {
+  text-shadow: 0 0 26px var(--accent-glow), 0 0 8px rgba(255, 255, 255, 0.28);
+}
+
+/* ─── Keyboard focus visibility (app-wide) ─── */
+:where(button, [role="button"], a, input):focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .hero-feature {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 18px;
+    margin-bottom: 28px;
+  }
+
+  .hero-feature-art {
+    /* Artwork leads on phones — text reads better underneath it */
+    order: -1;
+    width: 128px;
+    height: 128px;
+  }
+
+  .section-head h3 {
+    font-size: 16px;
+  }
+
+  .mood-tile {
+    height: 92px;
+    padding: 12px;
+  }
+
+  .np-play {
+    width: 62px;
+    height: 62px;
+  }
+
+  .rank-badge {
+    font-size: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .home-aurora,
+  .hero-feature-bleed,
+  .np-ambient,
+  .np-halo,
+  .np-play-ring,
+  .np-scrub-fill,
+  .mood-tile::before,
+  .eq-live i,
+  .np-title-wrap.is-scrolling .np-title {
+    animation: none !important;
+  }
+
+  .hero-feature::after {
+    transition: none;
+  }
 }
