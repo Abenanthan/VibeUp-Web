@@ -62,12 +62,10 @@ export default function UserCursor(props: Props) {
     const [hovering, setHovering] = useState(false)
     const [pressed, setPressed] = useState(false)
 
-    const arrowSpring = useMemo<SpringOptions>(
-        () => ({ stiffness: 380, damping: 32, mass: 0.6 }),
-        []
-    )
+    // The label trails the arrow — it's the only part that should lag. Stiff
+    // enough to stay within a few pixels at normal pointer speeds.
     const labelSpringCfg = useMemo<SpringOptions>(
-        () => ({ stiffness: 220, damping: 26, mass: 0.7 }),
+        () => ({ stiffness: 550, damping: 38, mass: 0.5 }),
         []
     )
 
@@ -103,8 +101,10 @@ export default function UserCursor(props: Props) {
     const mouseX = useMotionValue(-9999)
     const mouseY = useMotionValue(-9999)
 
-    const arrowX = useSpring(mouseX, arrowSpring)
-    const arrowY = useSpring(mouseY, arrowSpring)
+    // The arrow IS the cursor — it binds to the raw pointer value with no spring
+    // in between. Any smoothing here reads as input lag, however stiff.
+    const arrowX = mouseX
+    const arrowY = mouseY
     const labelX = useSpring(mouseX, labelSpringCfg)
     const labelY = useSpring(mouseY, labelSpringCfg)
 
@@ -132,6 +132,9 @@ export default function UserCursor(props: Props) {
     const lastSampleRef = useRef<{ x: number; y: number; t: number } | null>(
         null
     )
+    // Mirrors `hovering` so the move handler can skip redundant setState calls —
+    // otherwise every mousemove queues a React update just to re-set `true`.
+    const hoveringRef = useRef(false)
 
     useEffect(() => {
         if (isTouchActive) return
@@ -168,23 +171,30 @@ export default function UserCursor(props: Props) {
             const sign = vx === 0 ? 0 : vx > 0 ? 1 : -1
             labelTiltTarget.set(sign * norm * labelTiltStrength)
 
-            if (fullScreen) setHovering(true)
+            if (fullScreen && !hoveringRef.current) {
+                hoveringRef.current = true
+                setHovering(true)
+            }
         }
 
         const onDown = () => setPressed(true)
         const onUp = () => setPressed(false)
 
-        const onEnter = () => setHovering(true)
+        const onEnter = () => {
+            hoveringRef.current = true
+            setHovering(true)
+        }
         const onLeave = () => {
+            hoveringRef.current = false
             setHovering(false)
             lastSampleRef.current = null
             labelTiltTarget.set(0)
         }
 
         if (fullScreen) {
-            window.addEventListener("mousemove", onMove)
-            window.addEventListener("mousedown", onDown)
-            window.addEventListener("mouseup", onUp)
+            window.addEventListener("mousemove", onMove, { passive: true })
+            window.addEventListener("mousedown", onDown, { passive: true })
+            window.addEventListener("mouseup", onUp, { passive: true })
             // also listen to window mouseleave to hide cursor if mouse leaves window
             document.addEventListener("mouseleave", onLeave)
             document.addEventListener("mouseenter", onEnter)

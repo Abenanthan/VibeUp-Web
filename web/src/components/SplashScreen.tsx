@@ -3,10 +3,13 @@ import { motion } from 'framer-motion';
 import logoImg from '../assets/image.png';
 
 interface SplashScreenProps {
+  /** Called once the fade-out has finished — safe to unmount. */
   onFinished: () => void;
+  /** Called when the fade-out begins, so the next screen can cross-fade in under us. */
+  onLeaveStart?: () => void;
 }
 
-export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
+export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished, onLeaveStart }) => {
   const [leaving, setLeaving] = React.useState(false);
 
   // Start the fade-out after the intro plays.
@@ -14,6 +17,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
     const timer = setTimeout(() => setLeaving(true), 2600);
     return () => clearTimeout(timer);
   }, []);
+
+  React.useEffect(() => {
+    if (leaving) onLeaveStart?.();
+  }, [leaving, onLeaveStart]);
 
   // Guaranteed removal even if onAnimationComplete never fires.
   React.useEffect(() => {

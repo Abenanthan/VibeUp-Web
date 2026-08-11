@@ -20,6 +20,12 @@ import { AnimatePresence, motion, HoverScale, SlidePanel } from './components/mo
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [showLanding, setShowLanding] = useState(true);
+  /* The splash has begun fading — mount the Landing now so it cross-fades in
+     underneath instead of leaving a gap where the app shows through. */
+  const [splashLeaving, setSplashLeaving] = useState(false);
+  /* The user has committed to entering — reveal the app shell so the Landing
+     dissolves *into* it rather than into an empty background. */
+  const [appRevealed, setAppRevealed] = useState(false);
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -50,9 +56,23 @@ export default function App() {
     setShowSplash(false);
   }, []);
 
+  const handleSplashLeaving = useCallback(() => {
+    setSplashLeaving(true);
+  }, []);
+
   const handleEnterApp = useCallback(() => {
     setShowLanding(false);
   }, []);
+
+  const handleLandingLeaving = useCallback(() => {
+    setAppRevealed(true);
+  }, []);
+
+  /* Keep the shell mounted the whole time (Home prefetches its rows while the
+     intro plays) but keep it *invisible* until the Landing starts dissolving.
+     `visibility: hidden` also drops it out of the tab order, so the intro
+     screens can't be tabbed past into a hidden Home. */
+  const appHidden = showLanding && !appRevealed;
 
   const renderContent = () => {
     switch (currentTab) {
@@ -98,13 +118,20 @@ export default function App() {
     <>
       {/* Splash Screen — self-manages its fade-out, then unmounts (no
           AnimatePresence: a stuck exit here would trap the whole app) */}
-      {showSplash && <SplashScreen onFinished={handleSplashFinished} />}
+      {showSplash && <SplashScreen onFinished={handleSplashFinished} onLeaveStart={handleSplashLeaving} />}
 
-      {/* Landing Page — same self-managed exit pattern */}
-      {!showSplash && showLanding && <Landing onEnter={handleEnterApp} />}
+      {/* Landing Page — mounts as soon as the splash *starts* leaving so the two
+          cross-fade, rather than briefly exposing the app between them. */}
+      {showLanding && (splashLeaving || !showSplash) && (
+        <Landing onEnter={handleEnterApp} onLeaveStart={handleLandingLeaving} />
+      )}
 
       {/* Main App */}
-      <div className="app-shell">
+      <div
+        className="app-shell"
+        aria-hidden={appHidden || undefined}
+        style={appHidden ? { visibility: 'hidden' } : undefined}
+      >
 
         {/* ── Main Panel Grid Layout ── */}
         <div className="app-panel">
@@ -297,14 +324,14 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Custom neon spring cursor */}
-        {!showSplash && (
-          <UserCursor
-            name={currentSong ? `Playing: ${currentSong.title}` : 'VibeUp'}
-            showLabel={!!currentSong}
-          />
-        )}
       </div>
+
+      {/* Custom neon cursor — lives OUTSIDE .app-shell so it survives the shell
+          being hidden behind the splash/landing, and renders above both. */}
+      <UserCursor
+        name={currentSong ? `Playing: ${currentSong.title}` : 'VibeUp'}
+        showLabel={!!currentSong}
+      />
     </>
   );
 }

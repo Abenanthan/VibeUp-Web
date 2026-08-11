@@ -9,7 +9,10 @@ import {
 import logoImg from '../assets/image.png';
 
 interface LandingProps {
+  /** Called once the exit animation has finished — safe to unmount. */
   onEnter: () => void;
+  /** Called the instant the user commits to entering, before the fade begins. */
+  onLeaveStart?: () => void;
 }
 
 const FEATURES = [
@@ -62,9 +65,11 @@ const LogoBadge: React.FC<{ size?: number }> = ({ size = 46 }) => (
   </div>
 );
 
-export const Landing: React.FC<LandingProps> = ({ onEnter }) => {
+export const Landing: React.FC<LandingProps> = ({ onEnter, onLeaveStart }) => {
   const [leaving, setLeaving] = React.useState(false);
-  const enter = React.useCallback(() => setLeaving(true), []);
+  // Fire onLeaveStart *before* the fade so the app can un-hide underneath us —
+  // otherwise this page dissolves into an empty background.
+  const enter = React.useCallback(() => { onLeaveStart?.(); setLeaving(true); }, [onLeaveStart]);
 
   // Guaranteed hand-off to the app even if onAnimationComplete never fires.
   React.useEffect(() => {
