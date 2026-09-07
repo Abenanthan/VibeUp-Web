@@ -9,7 +9,7 @@ VibeUp is a modern, high-performance web-based music streaming application built
 - **Modern UI/UX**: Fully built with React, featuring a sleek, responsive design that looks great on desktop and mobile.
 - **Fluid Animations**: Uses `framer-motion` to provide a dynamic, smooth, and interactive feel across the application.
 - **Advanced Playback Engine**: Robust HTML5 audio streaming with seamless media controls.
-- **Efficient Search Algorithm**: Utilizes robust APIs to process search queries, providing high-quality song recommendations based on popularity and relevance.
+- **Efficient Search Algorithm**: Utilizes robust APIs to process search queries, providing quality song recommendations based on popularity and relevance.
 - **Mini Player**: Persistent playback with mini-player controls that stay accessible while browsing the app.
 - **Curated Discoverability**: Easy access to top charts, new releases, and curated playlists.
 
