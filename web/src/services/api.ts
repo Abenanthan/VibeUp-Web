@@ -95,14 +95,21 @@ function mapDirectDto(dto: any): Song {
 
 // Safe JSON fetch — returns null on any error
 async function safeFetch(url: string): Promise<unknown> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, { signal: controller.signal });
     if (!r.ok) return null;
     return await r.json();
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }
+
+const searchCache = new Map<string, { expires: number; promise: Promise<Song[]> }>();
+const SEARCH_CACHE_MS = 5 * 60 * 1000;
 
 // Extract unique song IDs from JioSaavn autocomplete response
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -126,19 +133,36 @@ function extractIdsFromAutocomplete(json: any): string[] {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 export const saavnApi = {
-  /**
-   * Search algorithm that exactly mirrors Android's SongRepositoryImpl.kt:
-   * 1. Calls directApi.searchSongs with languages=english,hindi,punjabi,tamil,telugu
-   * 2. Maps to domain WITHOUT filtering out audioUrl (Android sets audioUrl="" and resolves via getSongById when played)
-   * 3. Filters out tribute/instrumental/lofi/karaoke/mashup/remix/cover and sorts by exact/prefix match
-   * 4. If direct API returns empty (gating/CORS), falls back to autocomplete IDs + worker getSongByIds, OR worker search.
-   */
   searchSongs: async (query: string, limit = 20): Promise<Song[]> => {
     if (!query || !query.trim()) return [];
+    const key = `${cleanQuery(query).toLowerCase()}|${limit}`;
+    const cached = searchCache.get(key);
+    if (cached && cached.expires > Date.now()) return cached.promise;
+    const promise = saavnApi.searchSongsUncached(query, limit);
+    searchCache.set(key, { expires: Date.now() + SEARCH_CACHE_MS, promise });
+    promise.then(songs => { if (!songs.length) searchCache.delete(key); }, () => searchCache.delete(key));
+    return promise;
+  },
+
+  searchSongsUncached: async (query: string, limit = 20): Promise<Song[]> => {
     const cleaned = cleanQuery(query);
     const enc = encodeURIComponent(cleaned);
 
     try {
+      // The worker is available to both development and deployed builds.
+      const workerJson = await safeFetch(
+        `${WORKER_BASE}api/search/songs?query=${enc}&limit=${limit}&languages=english,hindi,punjabi,tamil,telugu`
+      ) as { data?: unknown[] | { results?: unknown[] } } | null;
+      const workerData = workerJson?.data;
+      const rawResults = Array.isArray(workerData) ? workerData : workerData?.results;
+      if (rawResults?.length) {
+        const songs = rawResults.map(mapWorkerDto).filter((song) => song.id);
+        const filtered = songs.filter((song) => !/tribute|instrumental|lofi|karaoke|mashup|remix|cover/i.test(song.title));
+        return (filtered.length ? filtered : songs)
+          .sort((a, b) => getSortScore(b, query, cleaned) - getSortScore(a, query, cleaned))
+          .slice(0, limit);
+      }
+
       // ── Step 1: direct JioSaavn search (exact Android call) ─────────────────
       const searchParams = new URLSearchParams({
         '__call': 'search.getResults',
@@ -203,36 +227,6 @@ export const saavnApi = {
           const mapped = songsJson.data.map(mapWorkerDto).filter((s) => s.id);
           if (mapped.length > 0) return mapped;
         }
-      }
-
-      // ── Step 3: Fallback to Worker search with languages injected ───────────
-      const workerJson = await safeFetch(
-        `${WORKER_BASE}api/search/songs?query=${enc}&limit=${limit}&languages=english,hindi,punjabi,tamil,telugu`
-      ) as any;
-
-      const rawResults = (
-        Array.isArray(workerJson?.data)
-          ? workerJson.data
-          : Array.isArray(workerJson?.data?.results)
-          ? workerJson.data.results
-          : null
-      ) as any[] | null;
-
-      if (rawResults && rawResults.length > 0) {
-        const workerSongs = rawResults.map(mapWorkerDto).filter((s: Song) => s.id);
-        const filteredWorker = workerSongs.filter((song: Song) => {
-          const titleLower = song.title.toLowerCase();
-          return !(
-            titleLower.includes('tribute') ||
-            titleLower.includes('instrumental') ||
-            titleLower.includes('lofi') ||
-            titleLower.includes('karaoke') ||
-            titleLower.includes('mashup') ||
-            titleLower.includes('remix') ||
-            titleLower.includes('cover')
-          );
-        }).sort((a: Song, b: Song) => getSortScore(b, query, cleaned) - getSortScore(a, query, cleaned));
-        return (filteredWorker.length === 0 ? workerSongs : filteredWorker).slice(0, limit);
       }
 
       return [];

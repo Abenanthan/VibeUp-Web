@@ -134,7 +134,7 @@ const SongCard: React.FC<{
           />
         )}
         <MotionCard style={{ position: 'relative', width: '148px', height: '148px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', zIndex: 1, border: hov ? '1px solid var(--accent)' : '1px solid transparent', boxShadow: hov ? '0 0 20px var(--accent-glow), 0 0 40px var(--magenta-glow), 0 8px 32px rgba(0,0,0,0.55)' : '0 3px 10px rgba(0,0,0,0.3)', transition: 'box-shadow 0.35s ease, transform 0.25s ease, border-color 0.25s', transform: hov ? 'translateY(-6px) scale(1.03)' : 'none' }}>
-          <img src={song.imageUrl} alt={song.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s', transform: hov ? 'scale(1.04)' : 'scale(1)' }} />
+          <img src={song.imageUrl} alt={song.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s', transform: hov ? 'scale(1.04)' : 'scale(1)' }} />
           {/* Now-playing badge — live bars instead of a static dot */}
           {isNowPlaying && (
             <div style={{ position: 'absolute', top: '7px', left: '7px', zIndex: 4, display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 8px', borderRadius: '99px', background: 'rgba(8,6,15,0.72)', backdropFilter: 'blur(8px)', border: '1px solid var(--border-strong)' }}>
@@ -240,7 +240,8 @@ const Section: React.FC<{
 };
 
 /* ── Static data ── */
-const HOME_CACHE_KEY = 'vibeup_home_v1';
+const HOME_CACHE_KEY = `vibeup_home_v2_${new Date().getFullYear()}`;
+const HOME_CACHE_MS = 3 * 60 * 60 * 1000;
 const FAV_IDS =['GWwnRe0u', 'rjkrTnma', 'm1iXOUID', 'mPTrDSun', '__YIeFT-', 'uP7MlTHz', 'eLm-JvK4', 'SM-rvz75', 'qcVqPqk5', 'vRNpPA7_', 'yBmo2qWU', 'QWLY3Ls_', 'QkFUdVod', 'BH07HVc8', 'kehuVn2F', 'cDHlLKvW', '_KjTxjcC'];
 
 const selectDistinctSongs = (
@@ -312,12 +313,13 @@ export const Home: React.FC<{
 
   useEffect(() => {
     let cancelled = false;
+    let cacheFresh = false;
 
-    // ── 1) Instant paint from this session's cache (stale-while-revalidate) ──
+    // Paint saved rows immediately on reload and refresh them after they age.
     try {
-      const raw = sessionStorage.getItem(HOME_CACHE_KEY);
+      const raw = localStorage.getItem(HOME_CACHE_KEY);
       if (raw) {
-        const c = JSON.parse(raw) as Partial<Record<string, Song[]>>;
+        const c = JSON.parse(raw) as Partial<Record<string, Song[]>> & { savedAt?: number };
         if (c.favourites?.length) {
           setFavourites(c.favourites);
           setTrending(c.trending ?? []);
@@ -326,9 +328,17 @@ export const Home: React.FC<{
           setTeluguHits(c.teluguHits ?? []);
           setHindiHits(c.hindiHits ?? []);
           setLoading(false);
+          cacheFresh = Date.now() - (c.savedAt ?? 0) < HOME_CACHE_MS;
         }
       }
     } catch { /* ignore malformed cache */ }
+
+    if (cacheFresh) return () => { cancelled = true; };
+
+    // Keep navigation usable even when the music service is slow to respond.
+    const loadingTimeout = window.setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 3000);
 
     // ── 2) Revalidate in the background — all requests fire in parallel ──
     (async () => {
@@ -369,10 +379,11 @@ export const Home: React.FC<{
         setNewReleases(newReleases);
         setLoading(false);
 
-        // Cache for instant paint next time the Home tab mounts this session.
+        // Cache for instant paint on later visits and reloads.
         if (favs.length) {
           try {
-            sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify({
+            localStorage.setItem(HOME_CACHE_KEY, JSON.stringify({
+              savedAt: Date.now(),
               favourites: favs, trending: trendingSongs, tamilHits: tamilSongs,
               teluguHits: teluguSongs, hindiHits: hindiSongs, newReleases,
             }));
@@ -381,7 +392,7 @@ export const Home: React.FC<{
       } catch (e) { console.error(e); if (!cancelled) setLoading(false); }
     })();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; window.clearTimeout(loadingTimeout); };
   }, []);
 
   const handlePlay = useCallback((song: Song, queue: Song[]) => {

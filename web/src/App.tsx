@@ -1,31 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { PlaybackBar } from './components/PlaybackBar';
 import { EqualizerModal } from './components/EqualizerModal';
 import { LyricsView } from './pages/LyricsView';
 import { NowPlayingPage } from './pages/NowPlayingPage';
 import { Home } from './pages/Home';
-import { Search } from './pages/Search';
-import { Library } from './pages/Library';
-import { PlaylistDetail } from './pages/PlaylistDetail';
-import { ArtistDetail } from './pages/ArtistDetail';
-import { SplashScreen } from './components/SplashScreen';
-import { Landing } from './pages/Landing';
 import UserCursor from './components/UserCursor';
 import Snowfall from './components/Snowfall';
 import { useAudio } from './context/AudioContext';
 import { Play, Trash2, X, Home as HomeIcon, Search as SearchIcon, Library as LibraryIcon } from 'lucide-react';
 import { AnimatePresence, motion, HoverScale, SlidePanel } from './components/motion';
 
+const Search = lazy(() => import('./pages/Search').then(module => ({ default: module.Search })));
+const Library = lazy(() => import('./pages/Library').then(module => ({ default: module.Library })));
+const PlaylistDetail = lazy(() => import('./pages/PlaylistDetail').then(module => ({ default: module.PlaylistDetail })));
+const ArtistDetail = lazy(() => import('./pages/ArtistDetail').then(module => ({ default: module.ArtistDetail })));
+
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
-  const [showLanding, setShowLanding] = useState(true);
-  /* The splash has begun fading — mount the Landing now so it cross-fades in
-     underneath instead of leaving a gap where the app shows through. */
-  const [splashLeaving, setSplashLeaving] = useState(false);
-  /* The user has committed to entering — reveal the app shell so the Landing
-     dissolves *into* it rather than into an empty background. */
-  const [appRevealed, setAppRevealed] = useState(false);
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -51,28 +42,6 @@ export default function App() {
   const [showNowPlaying, setShowNowPlaying] = useState(false);
 
   const { activeQueue, currentSong, playSong, removeFromQueue, clearQueue } = useAudio();
-
-  const handleSplashFinished = useCallback(() => {
-    setShowSplash(false);
-  }, []);
-
-  const handleSplashLeaving = useCallback(() => {
-    setSplashLeaving(true);
-  }, []);
-
-  const handleEnterApp = useCallback(() => {
-    setShowLanding(false);
-  }, []);
-
-  const handleLandingLeaving = useCallback(() => {
-    setAppRevealed(true);
-  }, []);
-
-  /* Keep the shell mounted the whole time (Home prefetches its rows while the
-     intro plays) but keep it *invisible* until the Landing starts dissolving.
-     `visibility: hidden` also drops it out of the tab order, so the intro
-     screens can't be tabbed past into a hidden Home. */
-  const appHidden = showLanding && !appRevealed;
 
   const renderContent = () => {
     switch (currentTab) {
@@ -116,22 +85,8 @@ export default function App() {
 
   return (
     <>
-      {/* Splash Screen — self-manages its fade-out, then unmounts (no
-          AnimatePresence: a stuck exit here would trap the whole app) */}
-      {showSplash && <SplashScreen onFinished={handleSplashFinished} onLeaveStart={handleSplashLeaving} />}
-
-      {/* Landing Page — mounts as soon as the splash *starts* leaving so the two
-          cross-fade, rather than briefly exposing the app between them. */}
-      {showLanding && (splashLeaving || !showSplash) && (
-        <Landing onEnter={handleEnterApp} onLeaveStart={handleLandingLeaving} />
-      )}
-
       {/* Main App */}
-      <div
-        className="app-shell"
-        aria-hidden={appHidden || undefined}
-        style={appHidden ? { visibility: 'hidden' } : undefined}
-      >
+      <div className="app-shell">
 
         {/* ── Main Panel Grid Layout ── */}
         <div className="app-panel">
@@ -149,7 +104,7 @@ export default function App() {
             {/* Ambient snowfall backdrop — home only, behind content */}
             {currentTab === 'home' && (
               <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-                <Snowfall />
+                <Snowfall count={40} />
               </div>
             )}
             {/* Main content transitions */}
@@ -162,7 +117,9 @@ export default function App() {
                 transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
                 style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}
               >
-                {renderContent()}
+                <Suspense fallback={<div className="page-content" aria-label="Loading page" />}>
+                  {renderContent()}
+                </Suspense>
               </motion.div>
             </AnimatePresence>
           </main>
@@ -326,8 +283,7 @@ export default function App() {
 
       </div>
 
-      {/* Custom neon cursor — lives OUTSIDE .app-shell so it survives the shell
-          being hidden behind the splash/landing, and renders above both. */}
+      {/* Custom neon cursor */}
       <UserCursor
         name={currentSong ? `Playing: ${currentSong.title}` : 'VibeUp'}
         showLabel={!!currentSong}
