@@ -240,14 +240,10 @@ const Section: React.FC<{
 };
 
 /* ── Static data ── */
-<<<<<<< HEAD
 const HOME_CACHE_KEY = `vibeup_home_v2_${new Date().getFullYear()}`;
 const HOME_CACHE_MS = 3 * 60 * 60 * 1000;
-=======
-const HOME_CACHE_KEY = 'vibeup_home_v1';
 /* Last hero pick, so the next visit starts on a different track. */
 const FEATURED_LAST_KEY = 'vibeup_featured_last';
->>>>>>> 3923e173009b245b0ba98939d49825c7b4655709
 const FAV_IDS =['GWwnRe0u', 'rjkrTnma', 'm1iXOUID', 'mPTrDSun', '__YIeFT-', 'uP7MlTHz', 'eLm-JvK4', 'SM-rvz75', 'qcVqPqk5', 'vRNpPA7_', 'yBmo2qWU', 'QWLY3Ls_', 'QkFUdVod', 'BH07HVc8', 'kehuVn2F', 'cDHlLKvW', '_KjTxjcC'];
 
 const selectDistinctSongs = (
