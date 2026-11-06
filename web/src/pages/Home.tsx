@@ -240,8 +240,14 @@ const Section: React.FC<{
 };
 
 /* ── Static data ── */
+<<<<<<< HEAD
 const HOME_CACHE_KEY = `vibeup_home_v2_${new Date().getFullYear()}`;
 const HOME_CACHE_MS = 3 * 60 * 60 * 1000;
+=======
+const HOME_CACHE_KEY = 'vibeup_home_v1';
+/* Last hero pick, so the next visit starts on a different track. */
+const FEATURED_LAST_KEY = 'vibeup_featured_last';
+>>>>>>> 3923e173009b245b0ba98939d49825c7b4655709
 const FAV_IDS =['GWwnRe0u', 'rjkrTnma', 'm1iXOUID', 'mPTrDSun', '__YIeFT-', 'uP7MlTHz', 'eLm-JvK4', 'SM-rvz75', 'qcVqPqk5', 'vRNpPA7_', 'yBmo2qWU', 'QWLY3Ls_', 'QkFUdVod', 'BH07HVc8', 'kehuVn2F', 'cDHlLKvW', '_KjTxjcC'];
 
 const selectDistinctSongs = (
@@ -407,8 +413,29 @@ export const Home: React.FC<{
     } catch (e) { console.error(e); }
   };
 
-  /* The one track the hero puts front and centre — favourites first, trending as fallback. */
-  const featured = useMemo(() => favourites[0] ?? trending[0] ?? null, [favourites, trending]);
+  /* ── The one track the hero puts front and centre ──
+     Picked at random from the favourites pool (trending as fallback), once per
+     mount. Locking it in state matters: the pool is set twice — cache paint then
+     revalidate — and re-rolling on every change would swap the hero out from
+     under the user mid-scroll. The previous pick is remembered so two
+     consecutive visits don't land on the same track. */
+  const [featured, setFeatured] = useState<Song | null>(null);
+
+  useEffect(() => {
+    if (featured) return;
+    const pool = favourites.length ? favourites : trending;
+    if (!pool.length) return;
+
+    let prev: string | null = null;
+    try { prev = localStorage.getItem(FEATURED_LAST_KEY); } catch { /* private mode */ }
+
+    const fresh = pool.length > 1 ? pool.filter(s => s.id !== prev) : pool;
+    const pick = fresh[Math.floor(Math.random() * fresh.length)];
+
+    setFeatured(pick);
+    try { localStorage.setItem(FEATURED_LAST_KEY, pick.id); } catch { /* quota */ }
+  }, [favourites, trending, featured]);
+
   const heroIsLive = !!featured && currentSong?.id === featured.id && isPlaying;
 
   /* Everything on the page, flattened — powers the "Shuffle everything" CTA. */
@@ -457,7 +484,7 @@ export const Home: React.FC<{
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '12px' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: '99px', background: 'var(--magenta-dim)', border: '1px solid var(--border-strong)', fontSize: '9px', fontWeight: 800, letterSpacing: '1.4px', textTransform: 'uppercase', color: 'var(--accent-3)' }}>
-                      <Flame size={11} /> Today's pick
+                      <Flame size={11} /> Fresh pick
                     </span>
                     {heroIsLive && <LiveEq playing bars={5} height={14} />}
                   </div>
