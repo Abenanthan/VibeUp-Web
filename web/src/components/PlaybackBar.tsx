@@ -71,7 +71,7 @@ export const PlaybackBar: React.FC<{
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          style={{ height: '72px', background: 'rgba(10,9,10,0.85)', backdropFilter: 'blur(30px)', borderTop: '1px solid rgba(255,255,255,0.06)', zIndex: 100, position: 'relative' }}
+          style={{ height: '80px', background: 'rgba(10,9,10,0.85)', backdropFilter: 'blur(30px)', borderTop: '1px solid rgba(255,255,255,0.06)', zIndex: 100, position: 'relative' }}
         >
           {/* Progress bar at top edge */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'rgba(255,255,255,0.05)', cursor: 'pointer', zIndex: 2 }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); seekTo(((e.clientX - r.left) / r.width) * duration); }}>
@@ -115,8 +115,8 @@ export const PlaybackBar: React.FC<{
 
 
           {/* CENTER: Player Controls */}
-          <div className="playback-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+          <div className="playback-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', height: '100%', flex: 1 }}>
+            <div className="pb-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
               {iconBtn(toggleShuffle, isShuffle, <Shuffle size={18} />, 'Shuffle')}
               
               <HoverScale scale={1.1} tapScale={0.9}>
@@ -124,7 +124,7 @@ export const PlaybackBar: React.FC<{
               </HoverScale>
 
               <HoverScale scale={1.1} tapScale={0.95}>
-                <button onClick={togglePlayPause} disabled={isResolvingUrl} style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--accent-glow)', opacity: isResolvingUrl ? 0.6 : 1 }}>
+                <button className="pb-main-play" onClick={togglePlayPause} aria-label={isPlaying ? 'Pause' : 'Play'} disabled={isResolvingUrl} style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--accent-glow)', opacity: isResolvingUrl ? 0.6 : 1 }}>
                   <AnimatePresence mode="wait">
                     {isResolvingUrl ? (
                       <motion.div key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
@@ -157,7 +157,7 @@ export const PlaybackBar: React.FC<{
               </div>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+            <div className="pb-seek-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
               <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '35px', textAlign: 'right', fontWeight: 500 }}>{fmt(currentTime)}</span>
               <input 
                 type="range" 

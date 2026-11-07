@@ -920,6 +920,21 @@ input[type="range"]::-moz-range-thumb {
   min-width: 0;
 }
 
+.pb-controls-row {
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.pb-seek-row {
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.pb-seek-row input[type="range"] {
+  min-width: 0;
+  height: 20px;
+}
+
 .playback-right {
   min-width: 220px;
   width: 30%;
