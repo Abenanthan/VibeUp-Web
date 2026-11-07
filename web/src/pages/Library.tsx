@@ -13,7 +13,13 @@ export const Library: React.FC<{
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   const handleCreate = () => {
-    if (newPlName.trim()) { createPlaylist(newPlName.trim()); setNewPlName(''); setShowCreate(false); }
+    if (newPlName.trim()) {
+      const id = createPlaylist(newPlName.trim());
+      setNewPlName('');
+      setShowCreate(false);
+      setActivePlaylistId(id);
+      setCurrentTab('playlist_detail');
+    }
   };
 
   const getArt = (pl: any) => {

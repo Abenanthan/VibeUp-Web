@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
-  Play, Heart, Plus, ChevronRight, ChevronLeft, Shuffle, Sparkles,
+  Play, Heart, Plus, ChevronRight, ChevronLeft, Shuffle, Sparkles, ListMusic,
   Flame, PartyPopper, Waves, CloudRain, Target, Dumbbell,
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
@@ -296,10 +296,11 @@ const MOODS: { label: string; sub: string; query: string; bg: string; icon: Reac
 
 export const Home: React.FC<{
   setCurrentTab: (tab: string) => void;
+  setActivePlaylistId: (id: string) => void;
   onArtistClick: (artistId: string | null, artistName: string) => void;
-}> = ({ setCurrentTab: _setCurrentTab, onArtistClick }) => {
+}> = ({ setCurrentTab, setActivePlaylistId, onArtistClick }) => {
   const { playSong, currentSong, isPlaying } = useAudio();
-  const { recentlyPlayed, addToRecentlyPlayed } = useLibrary();
+  const { recentlyPlayed, playlists, addToRecentlyPlayed } = useLibrary();
 
   const [favourites, setFavourites] = useState<Song[]>([]);
   const [trending, setTrending] = useState<Song[]>([]);
@@ -463,6 +464,23 @@ export const Home: React.FC<{
           <span style={{ color: 'var(--magenta)' }}>?</span>
         </h2>
       </FadeInView>
+
+      {playlists.length > 0 && (
+        <section style={{ position: 'relative', zIndex: 1, marginBottom: '32px' }} aria-label="Your playlists">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>Your playlists</h2>
+            <button onClick={() => setCurrentTab('library')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>View library</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '10px' }}>
+            {playlists.map(pl => (
+              <button key={pl.id} onClick={() => { setActivePlaylistId(pl.id); setCurrentTab('playlist_detail'); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', textAlign: 'left', cursor: 'pointer' }}>
+                <ListMusic size={19} color="var(--accent)" style={{ flexShrink: 0 }} />
+                <span style={{ minWidth: 0 }}><strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12px' }}>{pl.name}</strong><small style={{ color: 'var(--text-secondary)' }}>{pl.songIds.length} {pl.songIds.length === 1 ? 'song' : 'songs'}</small></span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {loading ? (
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', flexDirection: 'column', gap: '18px' }}>

@@ -423,6 +423,13 @@ function getSortScore(song: Song, query: string, cleanedQuery: string): number {
     score += 10;
   }
 
+  // Artist and album searches should rank their matches ahead of unrelated titles.
+  if (artist === clLower) score += 80;
+  else if (artist.startsWith(clLower)) score += 65;
+  else if (artist.includes(clLower)) score += 50;
+  if (album === clLower) score += 55;
+  else if (album.includes(clLower)) score += 35;
+
   if (title.includes(qLower) || album.includes(qLower)) {
     score += 100;
   } else {

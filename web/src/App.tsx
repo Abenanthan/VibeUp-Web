@@ -46,7 +46,7 @@ export default function App() {
   const renderContent = () => {
     switch (currentTab) {
       case 'home':
-        return <Home setCurrentTab={setCurrentTab} onArtistClick={handleArtistClick} />;
+        return <Home setCurrentTab={setCurrentTab} setActivePlaylistId={setSelectedPlaylistId} onArtistClick={handleArtistClick} />;
       case 'search':
         return <Search onArtistClick={handleArtistClick} />;
       case 'library':
@@ -73,7 +73,7 @@ export default function App() {
           />
         );
       default:
-        return <Home setCurrentTab={setCurrentTab} onArtistClick={handleArtistClick} />;
+        return <Home setCurrentTab={setCurrentTab} setActivePlaylistId={setSelectedPlaylistId} onArtistClick={handleArtistClick} />;
     }
   };
 

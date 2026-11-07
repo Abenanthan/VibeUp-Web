@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Play, Pause, Heart, Clock, MoreVertical, Trash2, Search as SearchIcon, X, MoveDown, MoveUp } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
 import { useAudio } from '../context/AudioContext';
@@ -16,17 +16,17 @@ export const PlaylistDetail: React.FC<{
   const { playlists, likedSongs, toggleLike, isLiked, removeSongFromPlaylist, removePlaylist, reorderPlaylist, addSongToPlaylist, addToRecentlyPlayed } = useLibrary();
   const { playSong, currentSong, isPlaying, togglePlayPause } = useAudio();
 
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(playlistId !== 'liked');
   const [searchQ, setSearchQ] = useState('');
   const [searchRes, setSearchRes] = useState<Song[]>([]);
+  const [searching, setSearching] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [hoveredSong, setHoveredSong] = useState<string | null>(null);
-  const searchTmr = useRef<any>(null);
 
   const isLikedView = playlistId === 'liked';
-  const rawPlaylist = isLikedView
+  const rawPlaylist = useMemo(() => isLikedView
     ? { id: 'liked', name: 'Liked Songs', songIds: likedSongs.map(s => s.id) }
-    : playlists.find(p => p.id === playlistId);
+    : playlists.find(p => p.id === playlistId), [isLikedView, likedSongs, playlists, playlistId]);
 
   const [playlistSongs, setPlaylistSongs] = useState<Song[]>([]);
 
@@ -47,13 +47,17 @@ export const PlaylistDetail: React.FC<{
   const playlist = rawPlaylist ? { ...rawPlaylist, songs: playlistSongs } : null;
 
   useEffect(() => {
-    if (!searchQ.trim()) { setSearchRes([]); return; }
-    clearTimeout(searchTmr.current);
-    searchTmr.current = setTimeout(async () => {
-      try { const res = await saavnApi.searchSongs(searchQ, 10); setSearchRes(res); } catch (e) { console.error(e); }
-    }, 400);
-    return () => clearTimeout(searchTmr.current);
-  }, [searchQ]);
+    const query = searchQ.trim();
+    if (!query || !searchOpen) { setSearchRes([]); setSearching(false); return; }
+    let cancelled = false;
+    setSearchRes([]);
+    setSearching(true);
+    const timer = window.setTimeout(async () => {
+      const results = await saavnApi.searchSongs(query, 20).catch(() => []);
+      if (!cancelled) { setSearchRes(results); setSearching(false); }
+    }, 300);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [searchQ, searchOpen, playlistId]);
 
   if (!playlist) return <div style={{ padding: '40px', color: 'var(--text-secondary)' }}>Playlist not found.</div>;
 
@@ -141,8 +145,11 @@ export const PlaylistDetail: React.FC<{
                 <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>Let's find something for your playlist</h3>
                 <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-surface)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '0 14px', height: '44px', marginBottom: '16px' }}>
                   <SearchIcon size={16} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
-                  <input type="text" placeholder="Search for songs..." value={searchQ} onChange={e => setSearchQ(e.target.value)} style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: '13px', padding: '0 12px', fontFamily: 'var(--font)' }} />
+                  <input type="search" aria-label="Search songs to add" placeholder="Search by song, artist, or album" value={searchQ} onChange={e => setSearchQ(e.target.value)} style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: '13px', padding: '0 12px', fontFamily: 'var(--font)' }} />
                 </div>
+                <p aria-live="polite" style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                  {searching ? 'Searching…' : searchQ.trim() ? searchRes.length ? `${searchRes.length} songs found` : 'No songs found. Try another song or artist.' : 'Type a song or artist to add tracks.'}
+                </p>
                 {searchRes.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {searchRes.map(song => {

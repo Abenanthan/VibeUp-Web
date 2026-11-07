@@ -23,9 +23,11 @@ export const Sidebar: React.FC<{
 
   const handleCreate = () => {
     if (newPlName.trim()) {
-      createPlaylist(newPlName.trim());
+      const id = createPlaylist(newPlName.trim());
       setNewPlName('');
       setShowCreate(false);
+      setActivePlaylistId(id);
+      setCurrentTab('playlist_detail');
     }
   };
 
@@ -99,13 +101,15 @@ export const Sidebar: React.FC<{
             return (
               <StaggerItem key={pl.id}>
                 <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
-                  <button onClick={() => { setActivePlaylistId(pl.id); setCurrentTab('playlist_detail'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, fontFamily: 'var(--font)', transition: 'background 0.15s, color 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-hover)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
+                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', borderRadius: 'var(--radius-md)' }}>
+                    <button onClick={() => { setActivePlaylistId(pl.id); setCurrentTab('playlist_detail'); }} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, fontFamily: 'var(--font)', textAlign: 'left', transition: 'background 0.15s, color 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-hover)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
                     <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid var(--border)' }}>
                       <ListMusic size={13} color="var(--text-tertiary)" />
                     </div>
                     <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pl.name}</span>
-                    <button onClick={e => { e.stopPropagation(); setActiveMenu(menuOpen ? null : pl.id); }} style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--text-tertiary)', opacity: 0.5, transition: 'opacity 0.15s' }} onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}><MoreVertical size={14} /></button>
-                  </button>
+                    </button>
+                    <button aria-label={`Options for ${pl.name}`} onClick={e => { e.stopPropagation(); setActiveMenu(menuOpen ? null : pl.id); }} style={{ background: 'none', border: 'none', padding: '8px', cursor: 'pointer', color: 'var(--text-tertiary)', opacity: 0.7, transition: 'opacity 0.15s' }} onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}><MoreVertical size={14} /></button>
+                  </div>
                   <AnimatePresence>
                     {menuOpen && (
                       <motion.div initial={{ opacity: 0, scale: 0.9, y: 0 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 0 }} style={{ position: 'absolute', top: '34px', right: '12px', background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '5px', zIndex: 50, minWidth: '130px', boxShadow: '0 12px 32px rgba(0,0,0,0.6)' }}>
