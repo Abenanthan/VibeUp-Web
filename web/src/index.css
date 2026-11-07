@@ -919,46 +919,28 @@ input[type="range"]::-moz-range-thumb {
 
 .np-cover-wrap {
   position: relative;
-  width: min(320px, 40vh, calc(100% - 42px));
+  width: min(320px, 38vh, calc(100% - 48px));
   aspect-ratio: 1;
   flex-shrink: 0;
   align-self: center;
-  margin: 20px 0 min(20px, 2.5vh);
+  margin: 16px 0 min(20px, 2.5vh);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   isolation: isolate;
   perspective: 1000px;
   transform-style: preserve-3d;
   transition: scale 0.25s ease, filter 0.25s ease;
 }
 
-.np-cover-wrap:hover {
+.np-cover-wrap:not(.np-cover-round):hover {
   scale: 1.04;
   filter: brightness(1.08);
 }
 
-.np-cover-wheel {
-  position: absolute;
-  inset: -16%;
-  z-index: 0;
-  border-radius: 50%;
-  background: conic-gradient(transparent 0deg, var(--accent) 55deg, transparent 120deg, var(--magenta) 205deg, transparent 285deg, var(--accent-2) 345deg, transparent 360deg);
-  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
-  animation: npWheelSpin 8s linear infinite;
-  pointer-events: none;
-}
-
-.np-cover-wheel-idle {
-  animation-play-state: paused;
-  opacity: 0.45;
-}
-
-@keyframes npWheelSpin {
-  to { transform: rotate(360deg); }
-}
-
 .np-cover-art {
   position: relative;
-  z-index: 1;
   width: 100%;
   height: 100%;
   display: block;
@@ -966,6 +948,20 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 16px;
   background: #121018;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+}
+
+.np-cover-round .np-cover-art {
+  border-radius: 50%;
+  object-fit: cover;
+  animation: npCoverSpin 20s linear infinite;
+}
+
+.np-cover-paused .np-cover-art {
+  animation-play-state: paused;
+}
+
+@keyframes npCoverSpin {
+  to { transform: rotate(360deg); }
 }
 
 .nowplaying-right {
@@ -1087,7 +1083,7 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .np-cover-wrap {
-    width: min(68vw, 32vh, 300px);
+    width: min(68vw, 30vh, 290px);
   }
 
   /* ── Home — greeting ── */
@@ -1758,7 +1754,7 @@ input[type="range"]::-moz-range-thumb {
   .hero-feature-bleed,
   .np-ambient,
   .np-halo,
-  .np-cover-wheel,
+  .np-cover-round .np-cover-art,
   .np-play-ring,
   .np-scrub-fill,
   .mood-tile::before,
@@ -1767,7 +1763,7 @@ input[type="range"]::-moz-range-thumb {
     animation: none !important;
   }
 
-  .np-cover-wrap:hover {
+  .np-cover-wrap:not(.np-cover-round):hover {
     scale: 1;
   }
 

@@ -22,6 +22,7 @@ interface NowPlayingPageProps {
 }
 
 type RightTab = 'lyrics' | 'artist';
+type CoverMode = 'square' | 'round';
 
 const fmt = (s: number) => { if (!s || isNaN(s)) return '0:00'; return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`; };
 
@@ -128,6 +129,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
   const [prevVol, setPrevVol] = useState(volume);
   const [activeIdx, setActiveIdx] = useState(-1);
   const [rightTab, setRightTab] = useState<RightTab>('lyrics');
+  const [coverMode, setCoverMode] = useState<CoverMode>('square');
 
   const [artistSongs, setArtistSongs] = useState<Song[]>([]);
   const [artistImage, setArtistImage] = useState<string | null>(null);
@@ -144,7 +146,8 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
   const tiltX = useSpring(useTransform(coverY, [0, 1], [12, -12]), { stiffness: 200, damping: 22 });
   const tiltY = useSpring(useTransform(coverX, [0, 1], [-12, 12]), { stiffness: 200, damping: 22 });
 
-  const handleCoverMove = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleCoverMove = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (coverMode !== 'square') return;
     const rect = event.currentTarget.getBoundingClientRect();
     coverX.set((event.clientX - rect.left) / rect.width);
     coverY.set((event.clientY - rect.top) / rect.height);
@@ -302,16 +305,19 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
               <div className="nowplaying-left">
 
                 {/* Album cover */}
-                <motion.div
-                  className="np-cover-wrap"
+                <motion.button
+                  type="button"
+                  className={`np-cover-wrap${coverMode === 'round' ? ' np-cover-round' : ''}${isPlaying ? '' : ' np-cover-paused'}`}
                   onMouseMove={handleCoverMove}
                   onMouseLeave={resetCoverTilt}
+                  onClick={() => { resetCoverTilt(); setCoverMode(mode => mode === 'square' ? 'round' : 'square'); }}
+                  aria-label={coverMode === 'square' ? 'Show spinning round cover' : 'Show square cover'}
+                  title={coverMode === 'square' ? 'Switch to spinning round cover' : 'Switch to square cover'}
                   style={{ rotateX: tiltX, rotateY: tiltY }}
                 >
                   <div className={`np-halo${isPlaying ? '' : ' np-halo-idle'}`} aria-hidden="true" />
-                  <div className={`np-cover-wheel${isPlaying ? '' : ' np-cover-wheel-idle'}`} aria-hidden="true" />
                   <img className="np-cover-art" src={currentSong.imageUrl} alt={`${currentSong.title} cover art`} />
-                </motion.div>
+                </motion.button>
                 {/* Song info */}
                 <Reveal delay={0.15} style={{ marginBottom: 'min(14px, 1.5vh)', flexShrink: 0, textAlign: 'center' }}>
                   <div ref={titleWrapRef} className="np-title-wrap" style={{ marginBottom: '6px' }}>
