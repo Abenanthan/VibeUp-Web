@@ -10,7 +10,7 @@ import { saavnApi } from '../services/api';
 import type { LyricLine } from '../services/api';
 import type { Song } from '../types';
 import {
-  motion, AnimatePresence, HoverScale,
+  motion, AnimatePresence, HoverScale, useMotionValue, useSpring, useTransform,
 } from '../components/motion';
 
 interface NowPlayingPageProps {
@@ -139,6 +139,17 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
 
   const titleWrapRef = useRef<HTMLDivElement>(null);
   const titleRef     = useRef<HTMLHeadingElement>(null);
+  const coverX = useMotionValue(0.5);
+  const coverY = useMotionValue(0.5);
+  const tiltX = useSpring(useTransform(coverY, [0, 1], [12, -12]), { stiffness: 200, damping: 22 });
+  const tiltY = useSpring(useTransform(coverX, [0, 1], [-12, 12]), { stiffness: 200, damping: 22 });
+
+  const handleCoverMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    coverX.set((event.clientX - rect.left) / rect.width);
+    coverY.set((event.clientY - rect.top) / rect.height);
+  };
+  const resetCoverTilt = () => { coverX.set(0.5); coverY.set(0.5); };
 
   const liked = currentSong ? isLiked(currentSong.id) : false;
 
@@ -291,10 +302,16 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
               <div className="nowplaying-left">
 
                 {/* Album cover */}
-                <div className="np-cover-wrap">
+                <motion.div
+                  className="np-cover-wrap"
+                  onMouseMove={handleCoverMove}
+                  onMouseLeave={resetCoverTilt}
+                  style={{ rotateX: tiltX, rotateY: tiltY }}
+                >
                   <div className={`np-halo${isPlaying ? '' : ' np-halo-idle'}`} aria-hidden="true" />
+                  <div className={`np-cover-wheel${isPlaying ? '' : ' np-cover-wheel-idle'}`} aria-hidden="true" />
                   <img className="np-cover-art" src={currentSong.imageUrl} alt={`${currentSong.title} cover art`} />
-                </div>
+                </motion.div>
                 {/* Song info */}
                 <Reveal delay={0.15} style={{ marginBottom: 'min(14px, 1.5vh)', flexShrink: 0, textAlign: 'center' }}>
                   <div ref={titleWrapRef} className="np-title-wrap" style={{ marginBottom: '6px' }}>
