@@ -86,7 +86,7 @@ export default function App() {
   return (
     <>
       {/* Main App */}
-      <div className="app-shell">
+      <div className={`app-shell${currentSong ? ' has-player' : ''}`}>
 
         {/* ── Main Panel Grid Layout ── */}
         <div className="app-panel">
@@ -94,6 +94,7 @@ export default function App() {
           <div className="sidebar-desktop" style={{ width: '260px', height: '100%', flexShrink: 0 }}>
             <Sidebar
               currentTab={currentTab}
+              selectedPlaylistId={selectedPlaylistId}
               setCurrentTab={setCurrentTab}
               setActivePlaylistId={setSelectedPlaylistId}
             />

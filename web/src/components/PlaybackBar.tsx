@@ -82,7 +82,7 @@ export const PlaybackBar: React.FC<{
           {/* LEFT: Song Info */}
           <div className="playback-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <HoverScale scale={1.05} tapScale={0.95}>
-              <div onClick={onOpenNowPlaying} style={{ position: 'relative', width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', flexShrink: 0 }}>
+              <div className="pb-art" onClick={onOpenNowPlaying} style={{ position: 'relative', width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', flexShrink: 0 }}>
                 <AnimatePresence mode="popLayout">
                   <motion.img
                     key={currentSong.imageUrl}
@@ -98,7 +98,7 @@ export const PlaybackBar: React.FC<{
                 </div>
               </div>
             </HoverScale>
-            <div style={{ overflow: 'hidden', flex: 1, cursor: 'pointer' }} onClick={onOpenNowPlaying}>
+            <div className="pb-song-info" style={{ overflow: 'hidden', flex: 1, cursor: 'pointer' }} onClick={onOpenNowPlaying}>
               <AnimatePresence mode="wait">
                 <motion.div key={currentSong.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                   <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSong.title}</p>
@@ -106,8 +106,8 @@ export const PlaybackBar: React.FC<{
                 </motion.div>
               </AnimatePresence>
             </div>
-            <HoverScale scale={1.2} tapScale={0.9}>
-              <button onClick={() => toggleLike(currentSong)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: liked ? 'var(--danger)' : 'rgba(255,255,255,0.4)', flexShrink: 0, padding: '4px' }}>
+            <HoverScale className="pb-like" scale={1.2} tapScale={0.9}>
+              <button onClick={() => toggleLike(currentSong)} aria-label={liked ? 'Remove from liked songs' : 'Add to liked songs'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: liked ? 'var(--danger)' : 'rgba(255,255,255,0.4)', flexShrink: 0, padding: '4px' }}>
                 <Heart size={18} fill={liked ? 'var(--danger)' : 'none'} />
               </button>
             </HoverScale>
@@ -176,11 +176,11 @@ export const PlaybackBar: React.FC<{
           <div className="playback-right" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '14px' }}>
             {/* Mobile-only: prev/play/next */}
             <div className="pb-show-mobile" style={{ display: 'none', alignItems: 'center', gap: '10px' }}>
-              <HoverScale scale={1.1} tapScale={0.9}>
-                <button onClick={playPrevious} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', padding: '4px', display: 'flex' }}><SkipBack size={20} fill="currentColor" /></button>
+              <HoverScale className="pb-mobile-prev" scale={1.1} tapScale={0.9}>
+                <button onClick={playPrevious} aria-label="Previous track" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', padding: '4px', display: 'flex' }}><SkipBack size={20} fill="currentColor" /></button>
               </HoverScale>
               <HoverScale scale={1.1} tapScale={0.95}>
-                <button onClick={togglePlayPause} disabled={isResolvingUrl} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--accent-glow)', opacity: isResolvingUrl ? 0.6 : 1, flexShrink: 0 }}>
+                <button onClick={togglePlayPause} aria-label={isPlaying ? 'Pause' : 'Play'} disabled={isResolvingUrl} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px var(--accent-glow)', opacity: isResolvingUrl ? 0.6 : 1, flexShrink: 0 }}>
                   <AnimatePresence mode="wait">
                     {isResolvingUrl ? (
                       <motion.div key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
@@ -199,7 +199,7 @@ export const PlaybackBar: React.FC<{
                 </button>
               </HoverScale>
               <HoverScale scale={1.1} tapScale={0.9}>
-                <button onClick={playNext} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', padding: '4px', display: 'flex' }}><SkipForward size={20} fill="currentColor" /></button>
+                <button onClick={playNext} aria-label="Next track" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', padding: '4px', display: 'flex' }}><SkipForward size={20} fill="currentColor" /></button>
               </HoverScale>
             </div>
             <div className="pb-hide-mobile" style={{ position: 'relative' }} onMouseEnter={() => setEqHover(true)} onMouseLeave={() => setEqHover(false)}>

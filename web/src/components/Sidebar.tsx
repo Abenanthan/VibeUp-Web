@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Home, Search, Library, Plus, ListMusic, MoreVertical, Heart, X } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
-import { HoverScale, StaggerContainer, StaggerItem, AnimatePresence, motion, ModalOverlay } from '../components/motion';
+import { HoverScale, AnimatePresence, motion, ModalOverlay } from '../components/motion';
 import logoImg from '../assets/image.png';
 
 const NAV_ITEMS = [
@@ -12,9 +12,10 @@ const NAV_ITEMS = [
 
 export const Sidebar: React.FC<{
   currentTab: string;
+  selectedPlaylistId: string | null;
   setCurrentTab: (tab: string) => void;
   setActivePlaylistId: (id: string) => void;
-}> = ({ currentTab, setCurrentTab, setActivePlaylistId }) => {
+}> = ({ currentTab, selectedPlaylistId, setCurrentTab, setActivePlaylistId }) => {
   const { playlists, createPlaylist, removePlaylist } = useLibrary();
 
   const [showCreate, setShowCreate] = useState(false);
@@ -86,25 +87,26 @@ export const Sidebar: React.FC<{
 
       {/* Playlists List */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 12px', display: 'flex', flexDirection: 'column', gap: '2px' }} className="hide-scrollbar">
-        <StaggerContainer staggerDelay={0.04}>
-          <StaggerItem>
+        <div>
+          <div>
             <button onClick={() => { setActivePlaylistId('liked'); setCurrentTab('playlist_detail'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, fontFamily: 'var(--font)', transition: 'background 0.15s, color 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-hover)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
               <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'linear-gradient(135deg, #a855f7, #e879f9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Heart size={13} fill="#fff" color="#fff" />
               </div>
               <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Liked Songs</span>
             </button>
-          </StaggerItem>
+          </div>
 
           {playlists.map(pl => {
             const menuOpen = activeMenu === pl.id;
+            const selected = currentTab === 'playlist_detail' && selectedPlaylistId === pl.id;
             return (
-              <StaggerItem key={pl.id}>
+              <div key={pl.id} style={{ marginTop: '5px' }}>
                 <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
-                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', borderRadius: 'var(--radius-md)' }}>
-                    <button onClick={() => { setActivePlaylistId(pl.id); setCurrentTab('playlist_detail'); }} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, fontFamily: 'var(--font)', textAlign: 'left', transition: 'background 0.15s, color 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-hover)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid var(--border)' }}>
-                      <ListMusic size={13} color="var(--text-tertiary)" />
+                  <div className={`sidebar-playlist-row${selected ? ' is-active' : ''}`}>
+                    <button onClick={() => { setActivePlaylistId(pl.id); setCurrentTab('playlist_detail'); }} aria-current={selected ? 'page' : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 10px', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font)', textAlign: 'left' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--accent-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid var(--border-medium)' }}>
+                      <ListMusic size={14} color="var(--accent-2)" />
                     </div>
                     <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pl.name}</span>
                     </button>
@@ -118,10 +120,10 @@ export const Sidebar: React.FC<{
                     )}
                   </AnimatePresence>
                 </div>
-              </StaggerItem>
+              </div>
             );
           })}
-        </StaggerContainer>
+        </div>
       </div>
 
       {/* Create Playlist Modal */}
