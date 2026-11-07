@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Play, Pause, SkipForward, SkipBack, Shuffle, Repeat,
   Heart, ChevronDown, ListMusic, Plus, Sliders, Volume2, VolumeX,
-  Disc3, Square, Disc, User, Music2,
+  User, Music2,
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 import { useLibrary } from '../context/LibraryContext';
@@ -10,8 +10,7 @@ import { saavnApi } from '../services/api';
 import type { LyricLine } from '../services/api';
 import type { Song } from '../types';
 import {
-  motion, AnimatePresence, useMotionValue, useTransform, useSpring,
-  HoverScale, ParticleBurst,
+  motion, AnimatePresence, HoverScale,
 } from '../components/motion';
 
 interface NowPlayingPageProps {
@@ -22,7 +21,6 @@ interface NowPlayingPageProps {
   onArtistClick?: (artistId: string | null, artistName: string) => void;
 }
 
-type ArtMode = 'vinyl' | 'cover' | 'turntable';
 type RightTab = 'lyrics' | 'artist';
 
 const fmt = (s: number) => { if (!s || isNaN(s)) return '0:00'; return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`; };
@@ -129,11 +127,7 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [prevVol, setPrevVol] = useState(volume);
   const [activeIdx, setActiveIdx] = useState(-1);
-  const [artMode, setArtMode] = useState<ArtMode>('vinyl');
   const [rightTab, setRightTab] = useState<RightTab>('lyrics');
-  const [showParticles, setShowParticles] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [needleAttached, setNeedleAttached] = useState(isPlaying);
 
   const [artistSongs, setArtistSongs] = useState<Song[]>([]);
   const [artistImage, setArtistImage] = useState<string | null>(null);
@@ -145,17 +139,6 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
 
   const titleWrapRef = useRef<HTMLDivElement>(null);
   const titleRef     = useRef<HTMLHeadingElement>(null);
-
-  // 3D Parallax Motion Values (cover mode)
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
-  const rotateX = useTransform(mouseY, [0, 1], [22, -22]);
-  const rotateY = useTransform(mouseX, [0, 1], [-22, 22]);
-  const springRotateX = useSpring(rotateX, { stiffness: 200, damping: 20 });
-  const springRotateY = useSpring(rotateY, { stiffness: 200, damping: 20 });
-  const glareX = useTransform(mouseX, [0, 1], [0, 100]);
-  const glareY = useTransform(mouseY, [0, 1], [0, 100]);
-  const glare = useTransform([glareX, glareY], ([x, y]) => `radial-gradient(circle at ${x}% ${y}%, rgba(255,255,255,0.16) 0%, transparent 55%)`);
 
   const liked = currentSong ? isLiked(currentSong.id) : false;
 
@@ -171,15 +154,6 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
     ro.observe(wrap);
     return () => ro.disconnect();
   }, [currentSong?.id, isOpen]);
-
-  // Keep needle state in sync with play state (e.g. when user presses play/pause button)
-  useEffect(() => {
-    if (artMode === 'turntable') {
-      setNeedleAttached(isPlaying);
-    }
-  }, [isPlaying, artMode]);
-
-  const isDisk = artMode === 'vinyl';
 
   const handleMute = () => { if (volume > 0) { setPrevVol(volume); setVolume(0); } else setVolume(prevVol || 0.8); };
 
@@ -242,37 +216,11 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
     }
   }, [currentSong]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const cycleMode = useCallback(() => {
-    setArtMode((m) => (m === 'vinyl' ? 'cover' : m === 'cover' ? 'turntable' : 'vinyl'));
-    setShowParticles(true);
-    setTimeout(() => setShowParticles(false), 900);
-  }, []);
-
-  const pickMode = (m: ArtMode) => {
-    if (m === artMode) return;
-    setArtMode(m);
-    setShowParticles(true);
-    setTimeout(() => setShowParticles(false), 900);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    mouseX.set((e.clientX - rect.left) / rect.width);
-    mouseY.set((e.clientY - rect.top) / rect.height);
-  };
-  const handleMouseLeave = () => { setIsHovered(false); mouseX.set(0.5); mouseY.set(0.5); };
-
   const playArtistSong = (song: Song) => { addToRecentlyPlayed(song); playSong(song, artistSongs); };
 
   if (!currentSong) return null;
 
   const primaryArtist = currentSong.artist.split(',')[0].trim();
-
-  const modeBtns: { id: ArtMode; icon: React.ReactNode; label: string }[] = [
-    { id: 'vinyl',      icon: <Disc3 size={15} />,  label: 'Vinyl' },
-    { id: 'cover',      icon: <Square size={14} />, label: 'Cover' },
-    { id: 'turntable',  icon: <Disc size={14} />,   label: 'Turntable' },
-  ];
 
   return (
     <AnimatePresence>
@@ -342,267 +290,11 @@ export const NowPlayingPage: React.FC<NowPlayingPageProps> = ({ isOpen, onClose,
               {/* LEFT: art + controls */}
               <div className="nowplaying-left">
 
-                {/* Album art */}
-                <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', marginBottom: 'min(20px, 2.5vh)', flexShrink: 0, isolation: 'isolate' }}>
-                  {/* Colour halo that breathes with the transport */}
-                  <div
-                    className={`np-halo${isPlaying ? '' : ' np-halo-idle'}`}
-                    /* Sized off the artwork box, then oversized so the glow spills past its edge.
-                       `translate` is used (not transform) so it composes with the keyframe scale. */
-                    style={{ width: 'min(430px, 53vh, 126%)', aspectRatio: '1/1', inset: 'auto', top: '-11%', left: '50%', translate: '-50% 0' }}
-                    aria-hidden="true"
-                  />
-                  {artMode === 'turntable' ? (
-                    /* ── TURNTABLE MODE: spinning circle + draggable needle ── */
-                    <div
-                      style={{
-                        position: 'relative',
-                        width: 'min(340px, 42vh, 100%)',
-                        aspectRatio: '1/1',
-                      }}
-                    >
-                      {/* Spinning vinyl disc (same as vinyl mode) */}
-                      <motion.div
-                        layout
-                        onClick={cycleMode}
-                        title="Tap artwork to switch view"
-                        style={{
-                          position: 'relative',
-                          width: '100%',
-                          height: '100%',
-                          borderRadius: '50%',
-                          overflow: 'hidden',
-                          cursor: 'pointer',
-                          boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-                          scale: isPlaying ? 1 : 0.96,
-                        }}
-                      >
-                        <img
-                          src={currentSong.imageUrl}
-                          alt={currentSong.title}
-                          style={{
-                            width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-                            borderRadius: '50%',
-                            animation: 'spinVinyl 20s linear infinite',
-                            animationPlayState: needleAttached && isPlaying ? 'running' : 'paused',
-                          }}
-                        />
-                        {/* Vinyl overlays */}
-                        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none' }}>
-                          <div className="vinyl-spindle" />
-                          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, transparent 35%, rgba(0,0,0,0.15) 40%, rgba(255,255,255,0.03) 45%, transparent 50%, rgba(0,0,0,0.15) 55%, rgba(255,255,255,0.03) 60%, transparent 65%)' }} />
-                        </div>
-                      </motion.div>
-
-                      {/* Neon ring when playing */}
-                      <AnimatePresence>
-                        {needleAttached && isPlaying && (
-                          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="neon-orbit-ring" />
-                        )}
-                      </AnimatePresence>
-
-                      {/* ── Draggable Tonearm ── */}
-                      <div
-                        className={`tt-needle ${needleAttached ? 'tt-needle-on' : 'tt-needle-off'}`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          const arm = e.currentTarget;
-                          const base = arm.querySelector('.tt-needle-base');
-                          if (!base) return;
-                          const baseRect = base.getBoundingClientRect();
-                          const pivotX = baseRect.left + baseRect.width / 2;
-                          const pivotY = baseRect.top + baseRect.height / 2;
-
-                          const onMove = (ev: MouseEvent) => {
-                            const dx = ev.clientX - pivotX;
-                            const dy = ev.clientY - pivotY;
-                            let a = Math.atan2(dx, dy) * (180 / Math.PI);
-                            
-                            // Let's invert so that 0 is straight down (which is the default orientation of the arm)
-                            // dx=0, dy>0 => a=0
-                            a = Math.max(-20, Math.min(45, a));
-                            arm.style.transition = 'none';
-                            arm.style.transform = `rotate(${a}deg)`;
-                          };
-
-                          const onUp = (ev: MouseEvent) => {
-                            document.removeEventListener('mousemove', onMove);
-                            document.removeEventListener('mouseup', onUp);
-                            const dx = ev.clientX - pivotX;
-                            const dy = ev.clientY - pivotY;
-                            const a = Math.atan2(dx, dy) * (180 / Math.PI);
-                            arm.style.transition = '';
-                            arm.style.transform = '';
-                            
-                            if (a > 10) {
-                              if (!needleAttached) {
-                                setNeedleAttached(true);
-                                if (!isPlaying) togglePlayPause();
-                              }
-                            } else {
-                              if (needleAttached) {
-                                setNeedleAttached(false);
-                                if (isPlaying) togglePlayPause();
-                              }
-                            }
-                          };
-
-                          document.addEventListener('mousemove', onMove);
-                          document.addEventListener('mouseup', onUp);
-                        }}
-                        onTouchStart={(e) => {
-                          const arm = e.currentTarget;
-                          const base = arm.querySelector('.tt-needle-base');
-                          if (!base) return;
-                          const baseRect = base.getBoundingClientRect();
-                          const pivotX = baseRect.left + baseRect.width / 2;
-                          const pivotY = baseRect.top + baseRect.height / 2;
-
-                          const onMove = (ev: TouchEvent) => {
-                            const t = ev.touches[0];
-                            const dx = t.clientX - pivotX;
-                            const dy = t.clientY - pivotY;
-                            let a = Math.atan2(dx, dy) * (180 / Math.PI);
-                            a = Math.max(-20, Math.min(45, a));
-                            arm.style.transition = 'none';
-                            arm.style.transform = `rotate(${a}deg)`;
-                          };
-
-                          const onEnd = (ev: TouchEvent) => {
-                            document.removeEventListener('touchmove', onMove);
-                            document.removeEventListener('touchend', onEnd);
-                            const t = ev.changedTouches[0];
-                            const dx = t.clientX - pivotX;
-                            const dy = t.clientY - pivotY;
-                            const a = Math.atan2(dx, dy) * (180 / Math.PI);
-                            arm.style.transition = '';
-                            arm.style.transform = '';
-                            
-                            if (a > 10) {
-                              if (!needleAttached) {
-                                setNeedleAttached(true);
-                                if (!isPlaying) togglePlayPause();
-                              }
-                            } else {
-                              if (needleAttached) {
-                                setNeedleAttached(false);
-                                if (isPlaying) togglePlayPause();
-                              }
-                            }
-                          };
-
-                          document.addEventListener('touchmove', onMove, { passive: false });
-                          document.addEventListener('touchend', onEnd);
-                        }}
-                        title={needleAttached ? 'Drag needle off to pause' : 'Drag needle on to play'}
-                      >
-                        <div className="tt-needle-base" />
-                        <div className="tt-needle-weight" />
-                        <div className="tt-needle-arm">
-                          <div className="tt-needle-head">
-                            <div className="tt-needle-tip" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    /* ── VINYL / COVER MODE ── */
-                    <motion.div
-                      layout
-                      onClick={cycleMode}
-                      onMouseMove={artMode === 'cover' ? handleMouseMove : undefined}
-                      onMouseEnter={() => setIsHovered(true)}
-                      onMouseLeave={handleMouseLeave}
-                      title="Tap artwork to switch view"
-                      style={{
-                        position: 'relative',
-                        width: 'min(340px, 42vh, 100%)',
-                        aspectRatio: '1/1',
-                        borderRadius: isDisk ? '50%' : '18px',
-                        overflow: 'visible',
-                        rotateX: springRotateX,
-                        rotateY: springRotateY,
-                        scale: isHovered ? 1.03 : (isPlaying ? 1 : 0.96),
-                        perspective: '1000px',
-                        transformStyle: 'preserve-3d',
-                        cursor: 'pointer',
-                        boxShadow: isHovered
-                          ? '0 32px 80px rgba(0,0,0,0.85), 0 0 40px var(--magenta-glow)'
-                          : (isDisk ? '0 20px 60px rgba(0,0,0,0.6)' : '0 18px 44px rgba(0,0,0,0.55)'),
-                      }}
-                    >
-                      <motion.div
-                        layout
-                        style={{
-                          position: 'relative',
-                          width: '100%',
-                          height: '100%',
-                          borderRadius: 'inherit',
-                          overflow: 'hidden',
-                          padding: isDisk ? 0 : '12px',
-                          boxSizing: 'border-box',
-                          background: isDisk ? 'transparent' : '#121018',
-                        }}
-                      >
-                        <img
-                          src={currentSong.imageUrl}
-                          alt={currentSong.title}
-                          style={{
-                            width: '100%', height: '100%', objectFit: isDisk ? 'cover' : 'contain', objectPosition: 'center', display: 'block',
-                            animation: isDisk ? 'spinVinyl 20s linear infinite' : 'none',
-                            animationPlayState: isPlaying ? 'running' : 'paused',
-                            borderRadius: 'inherit',
-                          }}
-                        />
-
-                        {/* Vinyl overlays */}
-                        <AnimatePresence>
-                          {isDisk && (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none' }}>
-                              <div className="vinyl-spindle" />
-                              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, transparent 35%, rgba(0,0,0,0.15) 40%, rgba(255,255,255,0.03) 45%, transparent 50%, rgba(0,0,0,0.15) 55%, rgba(255,255,255,0.03) 60%, transparent 65%)' }} />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-
-                        {/* Cover overlays (holo sheen + glare) */}
-                        <AnimatePresence>
-                          {artMode === 'cover' && (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-                              <div className={`holo-sheen ${isHovered ? 'holo-sheen-active' : ''}`} />
-                              <motion.div style={{ position: 'absolute', inset: 0, background: glare, opacity: isHovered ? 1 : 0 }} />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-
-                      {/* Neon ring (vinyl + playing) */}
-                      <AnimatePresence>
-                        {isDisk && isPlaying && (
-                          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="neon-orbit-ring" />
-                        )}
-                      </AnimatePresence>
-
-                      {showParticles && <ParticleBurst count={16} color="var(--magenta)" size={5} />}
-                    </motion.div>
-                  )}
+                {/* Album cover */}
+                <div className="np-cover-wrap">
+                  <div className={`np-halo${isPlaying ? '' : ' np-halo-idle'}`} aria-hidden="true" />
+                  <img className="np-cover-art" src={currentSong.imageUrl} alt={`${currentSong.title} cover art`} />
                 </div>
-
-                {/* View-mode segmented control */}
-                <Reveal delay={0.1} style={{ display: 'flex', justifyContent: 'center', marginBottom: 'min(14px, 1.5vh)', flexShrink: 0 }}>
-                  <div style={{ display: 'flex', gap: '4px', padding: '4px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '99px' }}>
-                    {modeBtns.map((m) => {
-                      const active = artMode === m.id;
-                      return (
-                        <button key={m.id} onClick={() => pickMode(m.id)} title={m.label} aria-label={`${m.label} artwork mode`} style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 12px', borderRadius: '99px', border: 'none', cursor: 'pointer', background: 'none', color: active ? '#fff' : 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font)' }}>
-                          {active && <motion.div layoutId="art-mode-pill" style={{ position: 'absolute', inset: 0, background: 'var(--gradient-main)', borderRadius: '99px', zIndex: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} />}
-                          <span style={{ position: 'relative', zIndex: 1, display: 'flex' }}>{m.icon}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </Reveal>
-
                 {/* Song info */}
                 <Reveal delay={0.15} style={{ marginBottom: 'min(14px, 1.5vh)', flexShrink: 0, textAlign: 'center' }}>
                   <div ref={titleWrapRef} className="np-title-wrap" style={{ marginBottom: '6px' }}>
